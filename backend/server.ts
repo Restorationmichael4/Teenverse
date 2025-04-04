@@ -343,6 +343,31 @@ app.get("/api/determine-showdown-date", async (req, res) => {
         res.json({ message: "No votes yet." });
     }
 });
+
+// Track likes and check if a user qualifies for Clout Missions
+app.post('/track-like', async (req, res) => {
+  const { userId, postId } = req.body;
+  const db = await dbPromise;
+
+  await db.run('INSERT INTO likes (user_id, post_id, created_at) VALUES (?, ?, datetime("now"))', [userId, postId]);
+  
+  const { count } = await db.get('SELECT COUNT(*) as count FROM likes WHERE post_id = ? AND created_at >= datetime("now", "-1 day")', [postId]);
+  
+  if (count >= 50) {
+    await db.run('UPDATE users SET coins = coins + 100 WHERE id = ?', [userId]);
+    await db.run('INSERT INTO hall_of_fame (user_id, total_likes) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET total_likes = total_likes + ?', [userId, count, count]);
+  }
+
+  res.json({ message: 'Like recorded', currentLikes: count });
+});
+
+// Fetch Hall of Fame rankings
+app.get('/hall-of-fame', async (req, res) => {
+  const db = await dbPromise;
+  const rankings = await db.all('SELECT u.username, h.total_likes FROM hall_of_fame h JOIN users u ON h.user_id = u.id ORDER BY h.total_likes DESC');
+  res.json(rankings);
+});
+
     
 // Start Server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
