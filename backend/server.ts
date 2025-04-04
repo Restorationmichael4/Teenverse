@@ -220,5 +220,45 @@ app.get("/rant-zone", async (req, res) => {
     res.json(posts);
 });
 
+// API to handle coin flip
+app.post("/api/coin-flip", async (req, res) => {
+    const { userId, betAmount } = req.body;
+    
+    if (betAmount < 1 || betAmount > 100) {
+        return res.status(400).json({ message: "Bet must be between 1 and 100 coins." });
+    }
+
+    const db = await dbPromise;
+
+    // Get user balance
+    const user = await db.get("SELECT coins FROM users WHERE id = ?", [userId]);
+    if (!user || user.coins < betAmount) {
+        return res.status(400).json({ message: "Insufficient coins." });
+    }
+
+    // 50/50 chance
+    const isWin = Math.random() < 0.5;
+    let newBalance = user.coins;
+    let winnings = 0;
+
+    if (isWin) {
+        winnings = Math.floor(betAmount * 2 * 0.95); // 5% house cut
+        newBalance += winnings;
+    } else {
+        newBalance -= betAmount;
+    }
+
+    // Update user balance
+    await db.run("UPDATE users SET coins = ? WHERE id = ?", [newBalance, userId]);
+
+    // Save game history
+    await db.run(
+        "INSERT INTO coin_flip_history (user_id, bet_amount, won_amount, result) VALUES (?, ?, ?, ?)",
+        [userId, betAmount, winnings, isWin ? "win" : "lose"]
+    );
+
+    res.json({ result: isWin ? "win" : "lose", newBalance });
+});
+
 // Start Server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
