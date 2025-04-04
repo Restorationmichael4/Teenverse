@@ -63,5 +63,21 @@ app.post("/toggle-mode", (req, res) => {
     });
 });
 
+app.post("/create-post", (req, res) => {
+    const { email, content } = req.body;
+
+    db.get("SELECT id, mode FROM users WHERE email = ?", [email], (err, user) => {
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        db.run("INSERT INTO posts (user_id, content, mode) VALUES (?, ?, ?)", 
+            [user.id, content, user.mode], 
+            (err) => {
+                if (err) return res.status(500).json({ message: "Error creating post" });
+                res.json({ message: "Post created successfully!" });
+            }
+        );
+    });
+});
+
 // Start Server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
