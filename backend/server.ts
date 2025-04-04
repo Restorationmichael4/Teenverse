@@ -79,5 +79,16 @@ app.post("/create-post", (req, res) => {
     });
 });
 
+// Update user's coin balance
+                const newCoins = user.coins + 5;
+                db.run("UPDATE users SET coins = ? WHERE id = ?", [newCoins, user.id]);
+
+                res.json({ message: "Post created! +5 coins", newCoins });
+            }
+        );
+    });
+});
+
+
 // Start Server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
