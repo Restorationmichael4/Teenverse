@@ -17,6 +17,12 @@ export default function Profile() {
             .catch(err => console.error(err));
     };
 
+    useEffect(() => {
+        axios.post("http://localhost:5000/get-coins", { email })
+            .then(res => setCoins(res.data.coins))
+            .catch(err => console.error(err));
+    }, []);
+    
     return (
         <div>
             <h2>Profile ({mode === "main" ? "Main" : "Undercover"})</h2>
