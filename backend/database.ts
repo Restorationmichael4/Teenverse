@@ -11,3 +11,23 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
     dob TEXT,
     verified INTEGER
 )`);
+
+// Create Users Table (with mode tracking)
+db.run(`CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT UNIQUE,
+    password TEXT,
+    dob TEXT,
+    mode TEXT DEFAULT 'main'
+)`);
+
+// Create Posts Table (stores likes & expiration)
+db.run(`CREATE TABLE IF NOT EXISTS posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    content TEXT,
+    likes INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    mode TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+)`);
