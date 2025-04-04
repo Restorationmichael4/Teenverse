@@ -89,6 +89,15 @@ app.post("/create-post", (req, res) => {
     });
 });
 
+app.post("/get-coins", (req, res) => {
+    const { email } = req.body;
+
+    db.get("SELECT coins FROM users WHERE email = ?", [email], (err, user) => {
+        if (!user) return res.status(404).json({ message: "User not found" });
+        res.json({ coins: user.coins });
+    });
+});
+
 
 // Start Server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
