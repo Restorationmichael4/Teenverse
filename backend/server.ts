@@ -260,5 +260,89 @@ app.post("/api/coin-flip", async (req, res) => {
     res.json({ result: isWin ? "win" : "lose", newBalance });
 });
 
+// API to create a battle post
+app.post("/api/hype-battle", async (req, res) => {
+    const { userId, content } = req.body;
+
+    const db = await dbPromise;
+    await db.run("INSERT INTO hype_battles (user_id, content, votes) VALUES (?, ?, ?)", [userId, content, 0]);
+
+    res.json({ message: "Battle post created!" });
+});
+
+// API to vote for a battle post
+app.post("/api/vote-battle", async (req, res) => {
+    const { userId, battleId } = req.body;
+
+    const db = await dbPromise;
+    
+    // Check if the user already voted
+    const existingVote = await db.get("SELECT id FROM battle_votes WHERE user_id = ? AND battle_id = ?", [userId, battleId]);
+    if (existingVote) {
+        return res.status(400).json({ message: "You already voted for this battle!" });
+    }
+
+    // Record the vote
+    await db.run("INSERT INTO battle_votes (user_id, battle_id) VALUES (?, ?)", [userId, battleId]);
+    await db.run("UPDATE hype_battles SET votes = votes + 1 WHERE id = ?", [battleId]);
+
+    res.json({ message: "Vote cast successfully!" });
+});
+
+// API to determine battle winners after 24 hours
+app.get("/api/determine-winners", async (req, res) => {
+    const db = await dbPromise;
+
+    const battles = await db.all("SELECT id, user_id, votes FROM hype_battles WHERE created_at < DATETIME('now', '-1 day')");
+
+    for (const battle of battles) {
+        const winnerId = battle.user_id;
+        
+        // Give the winner 50 coins
+        await db.run("UPDATE users SET coins = coins + 50 WHERE id = ?", [winnerId]);
+
+        // Assign the title (remove previous holder)
+        await db.run("UPDATE users SET title = NULL WHERE title = 'Rap King'");
+        await db.run("UPDATE users SET title = 'Rap King' WHERE id = ?", [winnerId]);
+
+        // Mark battle as closed
+        await db.run("UPDATE hype_battles SET closed = 1 WHERE id = ?", [battle.id]);
+    }
+
+    res.json({ message: "Winners determined and titles assigned!" });
+});
+
+// API to vote for showdown battle date
+app.post("/api/vote-showdown", async (req, res) => {
+    const { userId, dateOption } = req.body;
+
+    const db = await dbPromise;
+
+    // Check if user already voted
+    const existingVote = await db.get("SELECT id FROM showdown_votes WHERE user_id = ?", [userId]);
+    if (existingVote) {
+        return res.status(400).json({ message: "You have already voted!" });
+    }
+
+    // Store vote
+    await db.run("INSERT INTO showdown_votes (user_id, date_option) VALUES (?, ?)", [userId, dateOption]);
+
+    res.json({ message: "Vote recorded!" });
+});
+
+// API to determine the next showdown date
+app.get("/api/determine-showdown-date", async (req, res) => {
+    const db = await dbPromise;
+
+    const result = await db.get("SELECT date_option, COUNT(*) as votes FROM showdown_votes GROUP BY date_option ORDER BY votes DESC LIMIT 1");
+
+    if (result) {
+        await db.run("INSERT INTO scheduled_battles (date) VALUES (?)", [result.date_option]);
+        res.json({ message: `Next battle scheduled for ${result.date_option}!` });
+    } else {
+        res.json({ message: "No votes yet." });
+    }
+});
+    
 // Start Server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
