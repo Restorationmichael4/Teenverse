@@ -81,3 +81,31 @@ CREATE TABLE IF NOT EXISTS coin_flip_history (
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(user_id) REFERENCES users(id)
 );
+CREATE TABLE IF NOT EXISTS hype_battles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    content TEXT,
+    votes INTEGER DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    closed INTEGER DEFAULT 0,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+);
+
+CREATE TABLE IF NOT EXISTS battle_votes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    battle_id INTEGER,
+    FOREIGN KEY(user_id) REFERENCES users(id),
+    FOREIGN KEY(battle_id) REFERENCES hype_battles(id)
+);
+
+CREATE TABLE IF NOT EXISTS showdown_votes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    date_option TEXT
+);
+
+CREATE TABLE IF NOT EXISTS scheduled_battles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    date TEXT
+);
