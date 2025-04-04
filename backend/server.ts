@@ -78,6 +78,13 @@ app.post("/create-post", (req, res) => {
         );
     });
 });
+const newXP = user.xp + 5;
+            db.run("UPDATE users SET xp = ? WHERE id = ?", [newXP, user.id]);
+
+            res.json({ message: "Post created! +5 XP", newXP });
+        });
+    });
+});
 
 // Update user's coin balance
                 const newCoins = user.coins + 5;
@@ -117,7 +124,32 @@ app.post("/daily-login", (req, res) => {
 
         res.json({ message: "Already claimed XP today!" });
     });
+    
 });
+function calculateLevel(xp: number): { level: number; rank: string } {
+    let level = Math.floor(xp / 10) + 1;
+    if (level > 100) level = 100;
 
+    let rank = "Newbie";
+    if (level >= 11) rank = "Rising Star";
+    if (level >= 26) rank = "Clout Lord";
+    if (level >= 51) rank = "Elite";
+    if (level >= 76) rank = "Titan";
+    if (level >= 100) rank = "Shadow Rank";
+
+    return { level, rank };
+}
+
+app.post("/get-user-stats", (req, res) => {
+    const { email } = req.body;
+
+    db.get("SELECT xp FROM users WHERE email = ?", [email], (err, user) => {
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const { level, rank } = calculateLevel(user.xp);
+        res.json({ xp: user.xp, level, rank });
+    });
+});
+           
 // Start Server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
