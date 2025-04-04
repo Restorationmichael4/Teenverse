@@ -4,6 +4,8 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { db } from "./database";
+import postRoutes from './routes/posts';
+app.use('/api/posts', postRoutes);
 
 dotenv.config();
 const app = express();
