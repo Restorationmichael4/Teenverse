@@ -47,5 +47,21 @@ app.post("/login", async (req, res) => {
     });
 });
 
+// Toggle User Mode (Main <-> Undercover)
+app.post("/toggle-mode", (req, res) => {
+    const { email } = req.body;
+
+    db.get("SELECT mode FROM users WHERE email = ?", [email], (err, user) => {
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const newMode = user.mode === "main" ? "undercover" : "main";
+
+        db.run("UPDATE users SET mode = ? WHERE email = ?", [newMode, email], (err) => {
+            if (err) return res.status(500).json({ message: "Error updating mode" });
+            res.json({ message: `Switched to ${newMode}` });
+        });
+    });
+});
+
 // Start Server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
