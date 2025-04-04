@@ -168,5 +168,57 @@ function checkSnitchStatus() {
 // Run snitch check every 24 hours
 setInterval(checkSnitchStatus, 86400000);
 
+const dbPromise = open({ filename: "database.sqlite", driver: sqlite3.Database });
+
+app.post("/post", async (req, res) => {
+    const { userId, content, mode } = req.body;
+    const db = await dbPromise;
+    await db.run("INSERT INTO posts (user_id, content, mode) VALUES (?, ?, ?)", [userId, content, mode]);
+    res.json({ message: "Post created" });
+});
+
+app.post("/like", async (req, res) => {
+    const { userId, postId } = req.body;
+    const db = await dbPromise;
+    try {
+        await db.run("INSERT INTO likes (post_id, user_id) VALUES (?, ?)", [postId, userId]);
+        await db.run("UPDATE posts SET likes = likes + 1 WHERE id = ?", [postId]);
+
+        // Check if post reached 50 likes
+        const post = await db.get("SELECT likes, mode FROM posts WHERE id = ?", [postId]);
+        if (post.likes >= 50 && post.mode === "undercover") {
+            await db.run("UPDATE posts SET created_at = NULL WHERE id = ?", [postId]); // Prevent expiration
+        }
+
+        // Check if user qualifies for "News King" badge
+        const totalLikes = await db.get("SELECT SUM(likes) as total FROM posts WHERE user_id = ?", [userId]);
+        if (totalLikes.total >= 100) {
+            await db.run("INSERT INTO badges (user_id, news_king) VALUES (?, 1) ON CONFLICT(user_id) DO UPDATE SET news_king = 1", [userId]);
+        }
+
+        res.json({ message: "Post liked" });
+    } catch {
+        res.status(400).json({ error: "Already liked" });
+    }
+});
+
+app.get("/posts", async (req, res) => {
+    const db = await dbPromise;
+    const posts = await db.all("SELECT * FROM posts WHERE mode != 'rant' ORDER BY created_at DESC");
+    res.json(posts);
+});
+
+app.get("/game-squad", async (req, res) => {
+    const db = await dbPromise;
+    const posts = await db.all("SELECT * FROM posts WHERE mode = 'game' ORDER BY created_at DESC");
+    res.json(posts);
+});
+
+app.get("/rant-zone", async (req, res) => {
+    const db = await dbPromise;
+    const posts = await db.all("SELECT id, content, likes FROM posts WHERE mode = 'rant' ORDER BY created_at DESC");
+    res.json(posts);
+});
+
 // Start Server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
