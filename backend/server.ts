@@ -98,6 +98,9 @@ app.post("/get-coins", (req, res) => {
     });
 });
 
+app.post("/buy-coins", (req, res) => {
+    res.json({ message: "Buying coins is not available yet." });
+});
 
 // Start Server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
