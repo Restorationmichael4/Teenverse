@@ -4,9 +4,9 @@
   "description": "Backend for TeenVerse",
   "main": "src/server.ts",
   "scripts": {
-    "start": "ts-node src/server.ts",
+    "start": "ts-node server.ts",
     "build": "tsc",
-    "dev": "nodemon src/server.ts"
+    "dev": "nodemon server.ts"
   },
   "dependencies": {
     "bcrypt": "^5.1.0",
