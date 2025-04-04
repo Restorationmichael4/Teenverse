@@ -9,23 +9,15 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
     email TEXT UNIQUE,
     password TEXT,
     dob TEXT,
-    verified INTEGER
-)`);
-
-// Create Users Table (with mode tracking)
-db.run(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    email TEXT UNIQUE,
-    password TEXT,
-    dob TEXT,
-    mode TEXT DEFAULT 'main'
-)`);
-
-// Update Users Table to include coins
-db.run(`ALTER TABLE users ADD COLUMN coins INTEGER DEFAULT 0`, (err) => {
-    if (err && !err.message.includes("duplicate column name")) {
-        console.error("Error updating users table:", err);
-    }
+    verified INTEGER,
+    mode TEXT DEFAULT 'main',
+    coins INTEGER DEFAULT 0,
+    xp INTEGER DEFAULT 0,
+    level INTEGER DEFAULT 1,
+    last_login TEXT DEFAULT NULL,
+    snitch_status TEXT DEFAULT 'clean'
+)`, (err) => {
+    if (err) console.error("Error creating users table:", err);
 });
 
 // Create Posts Table (stores likes & expiration)
@@ -37,42 +29,33 @@ db.run(`CREATE TABLE IF NOT EXISTS posts (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     mode TEXT,
     FOREIGN KEY(user_id) REFERENCES users(id)
-)`);
+)`, (err) => {
+    if (err) console.error("Error creating posts table:", err);
+});
 
-// Add XP, Level, Last Login, and Snitch Status to Users Table
-db.run(`ALTER TABLE users ADD COLUMN xp INTEGER DEFAULT 0`, (err) => {});
-db.run(`ALTER TABLE users ADD COLUMN level INTEGER DEFAULT 1`, (err) => {});
-db.run(`ALTER TABLE users ADD COLUMN last_login TEXT DEFAULT NULL`, (err) => {});
-db.run(`ALTER TABLE users ADD COLUMN snitch_status TEXT DEFAULT 'clean'`, (err) => {});
-
--- Table for posts (news feed, game squad, and rant zone)
-CREATE TABLE IF NOT EXISTS posts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER, 
-    content TEXT NOT NULL,
-    mode TEXT CHECK(mode IN ('main', 'undercover', 'rant')) NOT NULL,
-    likes INTEGER DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
--- Table for likes
-CREATE TABLE IF NOT EXISTS likes (
+// Table for likes
+db.run(`CREATE TABLE IF NOT EXISTS likes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     post_id INTEGER,
     user_id INTEGER,
     UNIQUE(post_id, user_id),
     FOREIGN KEY(post_id) REFERENCES posts(id),
     FOREIGN KEY(user_id) REFERENCES users(id)
-);
+)`, (err) => {
+    if (err) console.error("Error creating likes table:", err);
+});
 
--- Table for badges
-CREATE TABLE IF NOT EXISTS badges (
+// Table for badges
+db.run(`CREATE TABLE IF NOT EXISTS badges (
     user_id INTEGER PRIMARY KEY,
     news_king BOOLEAN DEFAULT 0,
     FOREIGN KEY(user_id) REFERENCES users(id)
-);
+)`, (err) => {
+    if (err) console.error("Error creating badges table:", err);
+});
 
-CREATE TABLE IF NOT EXISTS coin_flip_history (
+// Table for coin flip history
+db.run(`CREATE TABLE IF NOT EXISTS coin_flip_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
     bet_amount INTEGER,
@@ -80,8 +63,12 @@ CREATE TABLE IF NOT EXISTS coin_flip_history (
     result TEXT,
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(user_id) REFERENCES users(id)
-);
-CREATE TABLE IF NOT EXISTS hype_battles (
+)`, (err) => {
+    if (err) console.error("Error creating coin flip history table:", err);
+});
+
+// Table for hype battles
+db.run(`CREATE TABLE IF NOT EXISTS hype_battles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
     content TEXT,
@@ -89,23 +76,34 @@ CREATE TABLE IF NOT EXISTS hype_battles (
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     closed INTEGER DEFAULT 0,
     FOREIGN KEY(user_id) REFERENCES users(id)
-);
+)`, (err) => {
+    if (err) console.error("Error creating hype battles table:", err);
+});
 
-CREATE TABLE IF NOT EXISTS battle_votes (
+// Table for battle votes
+db.run(`CREATE TABLE IF NOT EXISTS battle_votes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
     battle_id INTEGER,
     FOREIGN KEY(user_id) REFERENCES users(id),
     FOREIGN KEY(battle_id) REFERENCES hype_battles(id)
-);
+)`, (err) => {
+    if (err) console.error("Error creating battle votes table:", err);
+});
 
-CREATE TABLE IF NOT EXISTS showdown_votes (
+// Table for showdown votes
+db.run(`CREATE TABLE IF NOT EXISTS showdown_votes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
     date_option TEXT
-);
+)`, (err) => {
+    if (err) console.error("Error creating showdown votes table:", err);
+});
 
-CREATE TABLE IF NOT EXISTS scheduled_battles (
+// Table for scheduled battles
+db.run(`CREATE TABLE IF NOT EXISTS scheduled_battles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     date TEXT
-);
+)`, (err) => {
+    if (err) console.error("Error creating scheduled battles table:", err);
+});
