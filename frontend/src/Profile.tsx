@@ -2,6 +2,38 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 
 export default function Profile() {
+    const [xp, setXP] = useState(0);
+    const [level, setLevel] = useState(1);
+    const [rank, setRank] = useState("Newbie");
+    const [snitchStatus, setSnitchStatus] = useState("clean");
+    const [email] = useState(localStorage.getItem("email"));
+
+    useEffect(() => {
+        axios.post("http://localhost:5000/get-user-stats", { email })
+            .then(res => {
+                setXP(res.data.xp);
+                setLevel(res.data.level);
+                setRank(res.data.rank);
+            })
+            .catch(err => console.error(err));
+
+        axios.post("http://localhost:5000/get-snitch-status", { email })
+            .then(res => setSnitchStatus(res.data.snitchStatus))
+            .catch(err => console.error(err));
+    }, []);
+
+    return (
+        <div>
+            <h2>Profile</h2>
+            <p>💎 XP: {xp}</p>
+            <p>📈 Level: {level}</p>
+            <p>🏆 Rank: {rank}</p>
+            {snitchStatus === "Potential Snitch" ? <p>🚨 Potential Snitch 🚨</p> : <p>✅ Verified</p>}
+        </div>
+    );
+}
+
+export default function Profile() {
     const [mode, setMode] = useState("main");
     const [email] = useState(localStorage.getItem("email"));
 
