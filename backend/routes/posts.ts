@@ -1,5 +1,5 @@
 import express from 'express';
-import db from '../db'; // or wherever your SQLite setup is
+import db from './database'; // or wherever your SQLite setup is
 const router = express.Router();
 
 router.get('/newsfeed', async (req, res) => {
