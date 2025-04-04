@@ -150,6 +150,23 @@ app.post("/get-user-stats", (req, res) => {
         res.json({ xp: user.xp, level, rank });
     });
 });
-           
+
+function checkSnitchStatus() {
+    db.all("SELECT id, xp FROM users", [], (err, users) => {
+        users.forEach((user) => {
+            db.get("SELECT SUM(xp) as weekly_xp FROM posts WHERE user_id = ? AND created_at >= datetime('now', '-7 days')", 
+            [user.id], (err, data) => {
+                const weeklyXP = data?.weekly_xp || 0;
+                const snitchStatus = weeklyXP < 50 ? "Potential Snitch" : "clean";
+
+                db.run("UPDATE users SET snitch_status = ? WHERE id = ?", [snitchStatus, user.id]);
+            });
+        });
+    });
+}
+
+// Run snitch check every 24 hours
+setInterval(checkSnitchStatus, 86400000);
+
 // Start Server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
