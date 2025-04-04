@@ -102,5 +102,22 @@ app.post("/buy-coins", (req, res) => {
     res.json({ message: "Buying coins is not available yet." });
 });
 
+app.post("/daily-login", (req, res) => {
+    const { email } = req.body;
+    const today = new Date().toISOString().split("T")[0];
+
+    db.get("SELECT xp, last_login FROM users WHERE email = ?", [email], (err, user) => {
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        if (user.last_login !== today) {
+            const newXP = user.xp + 10;
+            db.run("UPDATE users SET xp = ?, last_login = ? WHERE email = ?", [newXP, today, email]);
+            return res.json({ message: "+10 XP for daily login!", newXP });
+        }
+
+        res.json({ message: "Already claimed XP today!" });
+    });
+});
+
 // Start Server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
