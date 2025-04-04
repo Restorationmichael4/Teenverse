@@ -38,3 +38,10 @@ db.run(`CREATE TABLE IF NOT EXISTS posts (
     mode TEXT,
     FOREIGN KEY(user_id) REFERENCES users(id)
 )`);
+
+// Add XP, Level, Last Login, and Snitch Status to Users Table
+db.run(`ALTER TABLE users ADD COLUMN xp INTEGER DEFAULT 0`, (err) => {});
+db.run(`ALTER TABLE users ADD COLUMN level INTEGER DEFAULT 1`, (err) => {});
+db.run(`ALTER TABLE users ADD COLUMN last_login TEXT DEFAULT NULL`, (err) => {});
+db.run(`ALTER TABLE users ADD COLUMN snitch_status TEXT DEFAULT 'clean'`, (err) => {});
+
