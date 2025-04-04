@@ -21,6 +21,13 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
     mode TEXT DEFAULT 'main'
 )`);
 
+// Update Users Table to include coins
+db.run(`ALTER TABLE users ADD COLUMN coins INTEGER DEFAULT 0`, (err) => {
+    if (err && !err.message.includes("duplicate column name")) {
+        console.error("Error updating users table:", err);
+    }
+});
+
 // Create Posts Table (stores likes & expiration)
 db.run(`CREATE TABLE IF NOT EXISTS posts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
