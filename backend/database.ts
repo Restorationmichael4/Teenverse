@@ -71,3 +71,13 @@ CREATE TABLE IF NOT EXISTS badges (
     news_king BOOLEAN DEFAULT 0,
     FOREIGN KEY(user_id) REFERENCES users(id)
 );
+
+CREATE TABLE IF NOT EXISTS coin_flip_history (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    bet_amount INTEGER,
+    won_amount INTEGER,
+    result TEXT,
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+);
