@@ -10,6 +10,7 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "moduleResolution": "node",
+    "strict": false,
     "baseUrl": "./"
   },
   "include": ["backend/**/*.ts"],
