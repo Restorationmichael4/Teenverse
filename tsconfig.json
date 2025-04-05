@@ -14,5 +14,6 @@
     "baseUrl": "./"
   },
   "include": ["backend/**/*.ts"],
-  "exclude": ["node_modules", "frontend"]
+  "exclude": ["node_modules", "frontend"],
+  "types": ["node", "sqlite3"]
 }
