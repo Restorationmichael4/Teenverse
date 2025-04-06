@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { open } from "sqlite";
 import sqlite3 from "sqlite3";
+import path from "path"; // Import path module
 import postRoutes from './routes/posts';
 
 // Initialize dotenv
@@ -20,6 +21,14 @@ const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.SECRET_KEY || "teenverse_secret"; // Change this in production
 
 const dbPromise = open({ filename: "database.sqlite", driver: sqlite3.Database });
+
+// Serve static files from the frontend build directory
+app.use(express.static(path.join(__dirname, 'frontend/build')));
+
+// Catch all route to serve index.html for any route not handled by the API
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend/build', 'index.html'));
+});
 
 // Register Route
 app.post("/register", async (req, res) => {
