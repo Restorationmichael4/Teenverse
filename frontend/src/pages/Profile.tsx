@@ -7,6 +7,7 @@ export default function Profile() {
     const [rank, setRank] = useState("Newbie");
     const [snitchStatus, setSnitchStatus] = useState("clean");
     const [email] = useState(localStorage.getItem("email"));
+    const [mode, setMode] = useState("main");
 
     useEffect(() => {
         axios.post("http://localhost:5000/get-user-stats", { email })
@@ -20,26 +21,13 @@ export default function Profile() {
         axios.post("http://localhost:5000/get-snitch-status", { email })
             .then(res => setSnitchStatus(res.data.snitchStatus))
             .catch(err => console.error(err));
-    }, []);
-
-    return (
-        <div>
-            <h2>Profile</h2>
-            <p>💎 XP: {xp}</p>
-            <p>📈 Level: {level}</p>
-            <p>🏆 Rank: {rank}</p>
-            {snitchStatus === "Potential Snitch" ? <p>🚨 Potential Snitch 🚨</p> : <p>✅ Verified</p>}
-        </div>
-    );
-}
-
-export default function Profile() {
-    const [mode, setMode] = useState("main");
-    const [email] = useState(localStorage.getItem("email"));
-
-    useEffect(() => {
+        
         axios.post("http://localhost:5000/get-mode", { email })
             .then(res => setMode(res.data.mode))
+            .catch(err => console.error(err));
+
+        axios.post("http://localhost:5000/get-coins", { email })
+            .then(res => setCoins(res.data.coins))
             .catch(err => console.error(err));
     }, []);
 
@@ -49,18 +37,17 @@ export default function Profile() {
             .catch(err => console.error(err));
     };
 
-    useEffect(() => {
-        axios.post("http://localhost:5000/get-coins", { email })
-            .then(res => setCoins(res.data.coins))
-            .catch(err => console.error(err));
-    }, []);
-    
     return (
         <div>
+            <h2>Profile</h2>
+            <p>💎 XP: {xp}</p>
+            <p>📈 Level: {level}</p>
+            <p>🏆 Rank: {rank}</p>
+            {snitchStatus === "Potential Snitch" ? <p>🚨 Potential Snitch 🚨</p> : <p>✅ Verified</p>}
             <h2>Profile ({mode === "main" ? "Main" : "Undercover"})</h2>
             <button onClick={toggleMode}>
                 Switch to {mode === "main" ? "Undercover" : "Main"} Mode
             </button>
         </div>
     );
-}
+                                         }
