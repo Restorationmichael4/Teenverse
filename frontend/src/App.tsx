@@ -9,7 +9,7 @@ import CoinFlip from './pages/CoinFlip';
 import HypeBattles from './pages/HypeBattles';
 import UltimateShowdown from './pages/UltimateShowdown';
 import CloutMissions from './pages/CloutMissions';
-import HallOfFame from './pages/HallOfFame';
+import HallOfFame from './pages/HallOfFame.tsx';
 import Login from './pages/Login';
 import Register from './Register';
 import { useAuth } from './hooks/useAuth'; // Custom hook for user auth
