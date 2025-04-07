@@ -23,11 +23,11 @@ const SECRET_KEY = process.env.SECRET_KEY || "teenverse_secret"; // Change this 
 const dbPromise = open({ filename: "database.sqlite", driver: sqlite3.Database });
 
 // Serve static files from the frontend build directory
-app.use(express.static(path.join(__dirname, 'dist/frontend')));
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
 // Catch all route to serve index.html for any route not handled by the API
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist/frontend', 'index.html'));
+  res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 });
 
 // Register Route
