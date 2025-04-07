@@ -10,5 +10,17 @@
     <div style="position: fixed; top: 0; left: 0; background: yellow; color: black;">
       If you see this, the JavaScript bundle failed to load. Check the console for errors.
     </div>
+    <script>
+      // Debug: Confirm this script runs
+      const debugDiv = document.createElement('div');
+      debugDiv.innerText = 'Debug: Inline script in index.html is running';
+      debugDiv.style.position = 'fixed';
+      debugDiv.style.top = '20px';
+      debugDiv.style.left = '0';
+      debugDiv.style.background = 'green';
+      debugDiv.style.color = 'white';
+      document.body.appendChild(debugDiv);
+    </script>
+    <script type="module" src="/assets/index-RQjVk0yp.js" onerror="document.body.innerHTML += '<div style=\"position: fixed; top: 40px; left: 0; background: red; color: white;\">Error: Failed to load JavaScript bundle</div>'"></script>
   </body>
 </html>
