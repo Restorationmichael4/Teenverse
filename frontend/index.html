@@ -19,36 +19,38 @@
       debugDiv.style.background = 'green';
       debugDiv.style.color = 'white';
       document.body.appendChild(debugDiv);
+
+      // Check if Vite injected a script tag
+      const scripts = document.getElementsByTagName('script');
+      let viteScriptFound = false;
+      for (let script of scripts) {
+        if (script.type === 'module' && script.src.includes('/assets/index-')) {
+          viteScriptFound = true;
+          const viteScriptDiv = document.createElement('div');
+          viteScriptDiv.innerText = 'Debug: Vite injected script tag with src=' + script.src;
+          viteScriptDiv.style.position = 'fixed';
+          viteScriptDiv.style.top = '40px';
+          viteScriptDiv.style.left = '0';
+          viteScriptDiv.style.background = 'purple';
+          viteScriptDiv.style.color = 'white';
+          document.body.appendChild(viteScriptDiv);
+          break;
+        }
+      }
+      if (!viteScriptFound) {
+        const noScriptDiv = document.createElement('div');
+        noScriptDiv.innerText = 'Debug: Vite did not inject a script tag';
+        noScriptDiv.style.position = 'fixed';
+        noScriptDiv.style.top = '40px';
+        noScriptDiv.style.left = '0';
+        noScriptDiv.style.background = 'red';
+        noScriptDiv.style.color = 'white';
+        document.body.appendChild(noScriptDiv);
+      }
     </script>
     <script nomodule>
       document.body.innerHTML += '<div style="position: fixed; top: 60px; left: 0; background: orange; color: black;">Error: Your browser does not support ES modules. Please use a modern browser.</div>';
     </script>
-    <script>
-      // Dynamically add the script tag to debug loading
-      const script = document.createElement('script');
-      script.type = 'module';
-      script.src = '/assets/index-<new-hash>.js'; // Replace <new-hash> with the new hash from the latest build logs
-      script.onload = () => {
-        const successDiv = document.createElement('div');
-        successDiv.innerText = 'Debug: JavaScript bundle loaded successfully';
-        successDiv.style.position = 'fixed';
-        successDiv.style.top = '40px';
-        successDiv.style.left = '0';
-        successDiv.style.background = 'blue';
-        successDiv.style.color = 'white';
-        document.body.appendChild(successDiv);
-      };
-      script.onerror = () => {
-        const errorDiv = document.createElement('div');
-        errorDiv.innerText = 'Debug: Failed to load JavaScript bundle';
-        errorDiv.style.position = 'fixed';
-        errorDiv.style.top = '80px';
-        errorDiv.style.left = '0';
-        errorDiv.style.background = 'red';
-        errorDiv.style.color = 'white';
-        document.body.appendChild(errorDiv);
-      };
-      document.body.appendChild(script);
-    </script>
+    <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>
