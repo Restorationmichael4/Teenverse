@@ -5,7 +5,7 @@
   "main": "backend/server.ts",
   "scripts": {
     "start": "ts-node backend/server.ts",
-    "build": "tsc && cd frontend && npm install && vite build && cd ..",
+    "build": "tsc && cd frontend && npm install && vite build && cd .. && mkdir -p dist/frontend && cp -r frontend/build dist/frontend/",
     "client": "vite",
     "dev": "concurrently \"npm run start\" \"npm run client\""
   },
