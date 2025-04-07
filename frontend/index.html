@@ -7,5 +7,46 @@
   </head>
   <body>
     <div id="root"></div>
+    <div style="position: fixed; top: 0; left: 0; background: yellow; color: black;">
+      If you see this, the JavaScript bundle failed to load. Check the console for errors.
+    </div>
+    <script>
+      const debugDiv = document.createElement('div');
+      debugDiv.innerText = 'Debug: Inline script in index.html is running';
+      debugDiv.style.position = 'fixed';
+      debugDiv.style.top = '20px';
+      debugDiv.style.left = '0';
+      debugDiv.style.background = 'green';
+      debugDiv.style.color = 'white';
+      document.body.appendChild(debugDiv);
+
+      const scripts = document.getElementsByTagName('script');
+      let viteScriptFound = false;
+      for (let script of scripts) {
+        if (script.type === 'module' && script.src.includes('/assets/index-')) {
+          viteScriptFound = true;
+          const viteScriptDiv = document.createElement('div');
+          viteScriptDiv.innerText = 'Debug: Vite injected script tag with src=' + script.src;
+          viteScriptDiv.style.position = 'fixed';
+          viteScriptDiv.style.top = '40px';
+          viteScriptDiv.style.left = '0';
+          viteScriptDiv.style.background = 'purple';
+          viteScriptDiv.style.color = 'white';
+          document.body.appendChild(viteScriptDiv);
+          break;
+        }
+      }
+      if (!viteScriptFound) {
+        const noScriptDiv = document.createElement('div');
+        noScriptDiv.innerText = 'Debug: Vite did not inject a script tag';
+        noScriptDiv.style.position = 'fixed';
+        noScriptDiv.style.top = '40px';
+        noScriptDiv.style.left = '0';
+        noScriptDiv.style.background = 'red';
+        noScriptDiv.style.color = 'white';
+        document.body.appendChild(noScriptDiv);
+      }
+    </script>
+    <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>
