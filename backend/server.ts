@@ -23,11 +23,11 @@ const SECRET_KEY = process.env.SECRET_KEY || "teenverse_secret"; // Change this 
 const dbPromise = open({ filename: "database.sqlite", driver: sqlite3.Database });
 
 // Serve static files from the frontend build directory
-app.use(express.static(path.join(__dirname, '..', 'frontend', 'build')));
+app.use(express.static(path.join(__dirname, 'frontend/build')));
 
 // Catch all route to serve index.html for any route not handled by the API
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'frontend', 'build', 'index.html'));
+  res.sendFile(path.join(__dirname, 'frontend/build', 'index.html'));
 });
 
 // Register Route
@@ -168,8 +168,8 @@ function calculateLevel(xp: number): { level: number; rank: string } {
     if (level >= 11) rank = "Rising Star";
     if (level >= 26) rank = "Clout Lord";
     if (level >= 51) rank = "Elite";
-    if (level >= 76) rank is "Titan";
-    if (level >= 100) rank is "Shadow Rank";
+    if (level >= 76) rank = "Titan";
+    if (level >= 100) rank = "Shadow Rank";
 
     return { level, rank };
 }
@@ -182,7 +182,7 @@ function checkSnitchStatus() {
                 db.get("SELECT SUM(xp) as weekly_xp FROM posts WHERE user_id = ? AND created_at >= datetime('now', '-7 days')", 
                 [user.id], (err, data) => {
                     if (err) throw err;
-                    const weeklyXP = data?.weekly_xp or 0;
+                    const weeklyXP = data?.weekly_xp || 0;
                     const snitchStatus = weeklyXP < 50 ? "Potential Snitch" : "clean";
 
                     db.run("UPDATE users SET snitch_status = ? WHERE id = ?", [snitchStatus, user.id]);
@@ -216,7 +216,7 @@ app.post("/like", async (req, res) => {
         await db.run("UPDATE posts SET likes = likes + 1 WHERE id = ?", [postId]);
 
         const post = await db.get("SELECT likes, mode FROM posts WHERE id = ?", [postId]);
-        if (post.likes >= 50 and post.mode === "undercover") {
+        if (post.likes >= 50 && post.mode === "undercover") {
             await db.run("UPDATE posts SET created_at = NULL WHERE id = ?", [postId]); // Prevent expiration
         }
 
@@ -268,13 +268,13 @@ app.get("/rant-zone", async (req, res) => {
 app.post("/api/coin-flip", async (req, res) => {
     try {
         const { userId, betAmount } = req.body;
-        if (betAmount < 1 or betAmount > 100) {
+        if (betAmount < 1 || betAmount > 100) {
             return res.status(400).json({ message: "Bet must be between 1 and 100 coins." });
         }
 
         const db = await dbPromise;
         const user = await db.get("SELECT coins FROM users WHERE id = ?", [userId]);
-        if (!user or user.coins < betAmount) {
+        if (!user || user.coins < betAmount) {
             return res.status(400).json({ message: "Insufficient coins." });
         }
 
@@ -396,4 +396,25 @@ app.post('/track-like', async (req, res) => {
 
         if (count >= 50) {
             await db.run('UPDATE users SET coins = coins + 100 WHERE id = ?', [userId]);
-            await db.run('
+            await db.run('INSERT INTO hall_of_fame (user_id, total_likes) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET total_likes = total_likes + ?', [userId, count, count]);
+        }
+
+        res.json({ message: 'Like recorded', currentLikes: count });
+    } catch (err) {
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+// Fetch Hall of Fame Rankings
+app.get('/hall-of-fame', async (req, res) => {
+    try {
+        const db = await dbPromise;
+        const rankings = await db.all('SELECT u.username, h.total_likes FROM hall_of_fame h JOIN users u ON h.user_id = u.id ORDER BY h.total_likes DESC');
+        res.json(rankings);
+    } catch (err) {
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+// Start Server
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
