@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import path from "path";
 import postRoutes from './routes/posts';
-import { db } from "./database"; // Import the db connection from database.ts
+import { db } from "./database";
 
 // Initialize dotenv
 dotenv.config();
@@ -53,7 +53,7 @@ app.post("/register", async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Check if the user already exists
-        const existingUser = await new Promise((resolve, reject) => {
+        const existingUser: any = await new Promise<any>((resolve, reject) => {
             db.get("SELECT email FROM users WHERE email = ?", [email], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
@@ -64,7 +64,7 @@ app.post("/register", async (req, res) => {
         }
 
         // Insert the new user
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             db.run(
                 "INSERT INTO users (email, password, dob, verified) VALUES (?, ?, ?, ?)",
                 [email, hashedPassword, dob, 0],
@@ -86,7 +86,7 @@ app.post("/register", async (req, res) => {
 app.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body;
-        const user = await new Promise((resolve, reject) => {
+        const user: any = await new Promise<any>((resolve, reject) => {
             db.get("SELECT * FROM users WHERE email = ?", [email], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
@@ -109,7 +109,7 @@ app.post("/login", async (req, res) => {
 app.post("/toggle-mode", async (req, res) => {
     try {
         const { email } = req.body;
-        const user = await new Promise((resolve, reject) => {
+        const user: any = await new Promise<any>((resolve, reject) => {
             db.get("SELECT mode FROM users WHERE email = ?", [email], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
@@ -119,7 +119,7 @@ app.post("/toggle-mode", async (req, res) => {
         if (!user) return res.status(404).json({ message: "User not found" });
 
         const newMode = user.mode === "main" ? "undercover" : "main";
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             db.run("UPDATE users SET mode = ? WHERE email = ?", [newMode, email], (err) => {
                 if (err) reject(err);
                 resolve();
@@ -137,7 +137,7 @@ app.post("/toggle-mode", async (req, res) => {
 app.post("/create-post", async (req, res) => {
     try {
         const { email, content } = req.body;
-        const user = await new Promise((resolve, reject) => {
+        const user: any = await new Promise<any>((resolve, reject) => {
             db.get("SELECT id, mode, xp, coins FROM users WHERE email = ?", [email], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
@@ -146,7 +146,7 @@ app.post("/create-post", async (req, res) => {
 
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             db.run(
                 "INSERT INTO posts (user_id, content, mode) VALUES (?, ?, ?)",
                 [user.id, content, user.mode],
@@ -158,7 +158,7 @@ app.post("/create-post", async (req, res) => {
         });
 
         const newXP = user.xp + 5;
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             db.run("UPDATE users SET xp = ? WHERE id = ?", [newXP, user.id], (err) => {
                 if (err) reject(err);
                 resolve();
@@ -166,7 +166,7 @@ app.post("/create-post", async (req, res) => {
         });
 
         const newCoins = user.coins + 5;
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             db.run("UPDATE users SET coins = ? WHERE id = ?", [newCoins, user.id], (err) => {
                 if (err) reject(err);
                 resolve();
@@ -184,7 +184,7 @@ app.post("/create-post", async (req, res) => {
 app.post("/get-coins", async (req, res) => {
     try {
         const { email } = req.body;
-        const user = await new Promise((resolve, reject) => {
+        const user: any = await new Promise<any>((resolve, reject) => {
             db.get("SELECT coins FROM users WHERE email = ?", [email], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
@@ -209,7 +209,7 @@ app.post("/daily-login", async (req, res) => {
     try {
         const { email } = req.body;
         const today = new Date().toISOString().split("T")[0];
-        const user = await new Promise((resolve, reject) => {
+        const user: any = await new Promise<any>((resolve, reject) => {
             db.get("SELECT xp, last_login FROM users WHERE email = ?", [email], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
@@ -220,7 +220,7 @@ app.post("/daily-login", async (req, res) => {
 
         if (user.last_login !== today) {
             const newXP = user.xp + 10;
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
                 db.run(
                     "UPDATE users SET xp = ?, last_login = ? WHERE email = ?",
                     [newXP, today, email],
@@ -244,7 +244,7 @@ app.post("/daily-login", async (req, res) => {
 app.post("/get-user-stats", async (req, res) => {
     try {
         const { email } = req.body;
-        const user = await new Promise((resolve, reject) => {
+        const user: any = await new Promise<any>((resolve, reject) => {
             db.get("SELECT xp FROM users WHERE email = ?", [email], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
@@ -276,7 +276,7 @@ function calculateLevel(xp: number): { level: number; rank: string } {
 }
 
 function checkSnitchStatus() {
-    db.all("SELECT id, xp FROM users", [], (err, users) => {
+    db.all("SELECT id, xp FROM users", [], (err: Error | null, users: any[]) => {
         if (err) {
             console.error("Snitch status check error:", err);
             return;
@@ -285,7 +285,7 @@ function checkSnitchStatus() {
             db.get(
                 "SELECT SUM(xp) as weekly_xp FROM posts WHERE user_id = ? AND created_at >= datetime('now', '-7 days')",
                 [user.id],
-                (err, data) => {
+                (err: Error | null, data: any) => {
                     if (err) {
                         console.error("Snitch status query error:", err);
                         return;
@@ -293,7 +293,7 @@ function checkSnitchStatus() {
                     const weeklyXP = data?.weekly_xp || 0;
                     const snitchStatus = weeklyXP < 50 ? "Potential Snitch" : "clean";
 
-                    db.run("UPDATE users SET snitch_status = ? WHERE id = ?", [snitchStatus, user.id], (err) => {
+                    db.run("UPDATE users SET snitch_status = ? WHERE id = ?", [snitchStatus, user.id], (err: Error | null) => {
                         if (err) console.error("Snitch status update error:", err);
                     });
                 }
@@ -309,7 +309,7 @@ setInterval(checkSnitchStatus, 86400000);
 app.post("/post", async (req, res) => {
     try {
         const { userId, content, mode } = req.body;
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             db.run(
                 "INSERT INTO posts (user_id, content, mode) VALUES (?, ?, ?)",
                 [userId, content, mode],
@@ -330,21 +330,21 @@ app.post("/post", async (req, res) => {
 app.post("/like", async (req, res) => {
     try {
         const { userId, postId } = req.body;
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             db.run("INSERT INTO likes (post_id, user_id) VALUES (?, ?)", [postId, userId], (err) => {
                 if (err) reject(err);
                 resolve();
             });
         });
 
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             db.run("UPDATE posts SET likes = likes + 1 WHERE id = ?", [postId], (err) => {
                 if (err) reject(err);
                 resolve();
             });
         });
 
-        const post = await new Promise((resolve, reject) => {
+        const post: any = await new Promise<any>((resolve, reject) => {
             db.get("SELECT likes, mode FROM posts WHERE id = ?", [postId], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
@@ -352,7 +352,7 @@ app.post("/like", async (req, res) => {
         });
 
         if (post.likes >= 50 && post.mode === "undercover") {
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
                 db.run("UPDATE posts SET created_at = NULL WHERE id = ?", [postId], (err) => {
                     if (err) reject(err);
                     resolve();
@@ -360,7 +360,7 @@ app.post("/like", async (req, res) => {
             });
         }
 
-        const totalLikes = await new Promise((resolve, reject) => {
+        const totalLikes: any = await new Promise<any>((resolve, reject) => {
             db.get("SELECT SUM(likes) as total FROM posts WHERE user_id = ?", [userId], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
@@ -368,7 +368,7 @@ app.post("/like", async (req, res) => {
         });
 
         if (totalLikes.total >= 100) {
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
                 db.run(
                     "INSERT INTO badges (user_id, news_king) VALUES (?, 1) ON CONFLICT(user_id) DO UPDATE SET news_king = 1",
                     [userId],
@@ -390,7 +390,7 @@ app.post("/like", async (req, res) => {
 // Get Posts Route
 app.get("/posts", async (req, res) => {
     try {
-        const posts = await new Promise((resolve, reject) => {
+        const posts: any[] = await new Promise<any[]>((resolve, reject) => {
             db.all("SELECT * FROM posts WHERE mode != 'rant' ORDER BY created_at DESC", [], (err, rows) => {
                 if (err) reject(err);
                 resolve(rows);
@@ -406,7 +406,7 @@ app.get("/posts", async (req, res) => {
 // Get Game Squad Route
 app.get("/game-squad", async (req, res) => {
     try {
-        const posts = await new Promise((resolve, reject) => {
+        const posts: any[] = await new Promise<any[]>((resolve, reject) => {
             db.all("SELECT * FROM posts WHERE mode = 'game' ORDER BY created_at DESC", [], (err, rows) => {
                 if (err) reject(err);
                 resolve(rows);
@@ -422,7 +422,7 @@ app.get("/game-squad", async (req, res) => {
 // Get Rant Zone Route
 app.get("/rant-zone", async (req, res) => {
     try {
-        const posts = await new Promise((resolve, reject) => {
+        const posts: any[] = await new Promise<any[]>((resolve, reject) => {
             db.all("SELECT id, content, likes FROM posts WHERE mode = 'rant' ORDER BY created_at DESC", [], (err, rows) => {
                 if (err) reject(err);
                 resolve(rows);
@@ -443,7 +443,7 @@ app.post("/api/coin-flip", async (req, res) => {
             return res.status(400).json({ message: "Bet must be between 1 and 100 coins." });
         }
 
-        const user = await new Promise((resolve, reject) => {
+        const user: any = await new Promise<any>((resolve, reject) => {
             db.get("SELECT coins FROM users WHERE id = ?", [userId], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
@@ -465,14 +465,14 @@ app.post("/api/coin-flip", async (req, res) => {
             newBalance -= betAmount;
         }
 
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             db.run("UPDATE users SET coins = ? WHERE id = ?", [newBalance, userId], (err) => {
                 if (err) reject(err);
                 resolve();
             });
         });
 
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             db.run(
                 "INSERT INTO coin_flip_history (user_id, bet_amount, won_amount, result) VALUES (?, ?, ?, ?)",
                 [userId, betAmount, winnings, isWin ? "win" : "lose"],
@@ -494,7 +494,7 @@ app.post("/api/coin-flip", async (req, res) => {
 app.post("/api/hype-battle", async (req, res) => {
     try {
         const { userId, content } = req.body;
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             db.run(
                 "INSERT INTO hype_battles (user_id, content, votes) VALUES (?, ?, ?)",
                 [userId, content, 0],
@@ -515,7 +515,7 @@ app.post("/api/hype-battle", async (req, res) => {
 app.post("/api/vote-battle", async (req, res) => {
     try {
         const { userId, battleId } = req.body;
-        const existingVote = await new Promise((resolve, reject) => {
+        const existingVote: any = await new Promise<any>((resolve, reject) => {
             db.get(
                 "SELECT id FROM battle_votes WHERE user_id = ? AND battle_id = ?",
                 [userId, battleId],
@@ -530,14 +530,14 @@ app.post("/api/vote-battle", async (req, res) => {
             return res.status(400).json({ message: "You already voted for this battle!" });
         }
 
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             db.run("INSERT INTO battle_votes (user_id, battle_id) VALUES (?, ?)", [userId, battleId], (err) => {
                 if (err) reject(err);
                 resolve();
             });
         });
 
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             db.run("UPDATE hype_battles SET votes = votes + 1 WHERE id = ?", [battleId], (err) => {
                 if (err) reject(err);
                 resolve();
@@ -554,7 +554,7 @@ app.post("/api/vote-battle", async (req, res) => {
 // Determine Battle Winners after 24 hours
 app.get("/api/determine-winners", async (req, res) => {
     try {
-        const battles = await new Promise((resolve, reject) => {
+        const battles: any[] = await new Promise<any[]>((resolve, reject) => {
             db.all(
                 "SELECT id, user_id, votes FROM hype_battles WHERE created_at < DATETIME('now', '-1 day')",
                 [],
@@ -567,25 +567,25 @@ app.get("/api/determine-winners", async (req, res) => {
 
         for (const battle of battles) {
             const winnerId = battle.user_id;
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
                 db.run("UPDATE users SET coins = coins + 50 WHERE id = ?", [winnerId], (err) => {
                     if (err) reject(err);
                     resolve();
                 });
             });
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
                 db.run("UPDATE users SET title = NULL WHERE title = 'Rap King'", [], (err) => {
                     if (err) reject(err);
                     resolve();
                 });
             });
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
                 db.run("UPDATE users SET title = 'Rap King' WHERE id = ?", [winnerId], (err) => {
                     if (err) reject(err);
                     resolve();
                 });
             });
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
                 db.run("UPDATE hype_battles SET closed = 1 WHERE id = ?", [battle.id], (err) => {
                     if (err) reject(err);
                     resolve();
@@ -604,7 +604,7 @@ app.get("/api/determine-winners", async (req, res) => {
 app.post("/api/vote-showdown", async (req, res) => {
     try {
         const { userId, dateOption } = req.body;
-        const existingVote = await new Promise((resolve, reject) => {
+        const existingVote: any = await new Promise<any>((resolve, reject) => {
             db.get("SELECT id FROM showdown_votes WHERE user_id = ?", [userId], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
@@ -615,7 +615,7 @@ app.post("/api/vote-showdown", async (req, res) => {
             return res.status(400).json({ message: "You have already voted!" });
         }
 
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             db.run("INSERT INTO showdown_votes (user_id, date_option) VALUES (?, ?)", [userId, dateOption], (err) => {
                 if (err) reject(err);
                 resolve();
@@ -632,7 +632,7 @@ app.post("/api/vote-showdown", async (req, res) => {
 // Determine the Next Showdown Date
 app.get("/api/determine-showdown-date", async (req, res) => {
     try {
-        const result = await new Promise((resolve, reject) => {
+        const result: any = await new Promise<any>((resolve, reject) => {
             db.get(
                 "SELECT date_option, COUNT(*) as votes FROM showdown_votes GROUP BY date_option ORDER BY votes DESC LIMIT 1",
                 [],
@@ -644,7 +644,7 @@ app.get("/api/determine-showdown-date", async (req, res) => {
         });
 
         if (result) {
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
                 db.run("INSERT INTO scheduled_battles (date) VALUES (?)", [result.date_option], (err) => {
                     if (err) reject(err);
                     resolve();
@@ -664,14 +664,14 @@ app.get("/api/determine-showdown-date", async (req, res) => {
 app.post('/track-like', async (req, res) => {
     try {
         const { userId, postId } = req.body;
-        await new Promise((resolve, reject) => {
+        await new Promise<void>((resolve, reject) => {
             db.run('INSERT INTO likes (user_id, post_id) VALUES (?, ?)', [userId, postId], (err) => {
                 if (err) reject(err);
                 resolve();
             });
         });
 
-        const { count } = await new Promise((resolve, reject) => {
+        const result: any = await new Promise<any>((resolve, reject) => {
             db.get(
                 'SELECT COUNT(*) as count FROM likes WHERE post_id = ? AND created_at >= datetime("now", "-1 day")',
                 [postId],
@@ -681,15 +681,16 @@ app.post('/track-like', async (req, res) => {
                 }
             );
         });
+        const count = result.count;
 
         if (count >= 50) {
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
                 db.run('UPDATE users SET coins = coins + 100 WHERE id = ?', [userId], (err) => {
                     if (err) reject(err);
                     resolve();
                 });
             });
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
                 db.run(
                     'INSERT INTO hall_of_fame (user_id, total_likes) VALUES (?, ?) ON CONFLICT(user_id) DO UPDATE SET total_likes = total_likes + ?',
                     [userId, count, count],
@@ -711,7 +712,7 @@ app.post('/track-like', async (req, res) => {
 // Fetch Hall of Fame Rankings
 app.get('/hall-of-fame', async (req, res) => {
     try {
-        const rankings = await new Promise((resolve, reject) => {
+        const rankings: any[] = await new Promise<any[]>((resolve, reject) => {
             db.all('SELECT u.username, h.total_likes FROM hall_of_fame h JOIN users u ON h.user_id = u.id ORDER BY h.total_likes DESC', [], (err, rows) => {
                 if (err) reject(err);
                 resolve(rows);
