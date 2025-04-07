@@ -20,7 +20,6 @@
       debugDiv.style.color = 'white';
       document.body.appendChild(debugDiv);
 
-      // Check if Vite injected a script tag
       const scripts = document.getElementsByTagName('script');
       let viteScriptFound = false;
       for (let script of scripts) {
@@ -51,6 +50,6 @@
     <script nomodule>
       document.body.innerHTML += '<div style="position: fixed; top: 60px; left: 0; background: orange; color: black;">Error: Your browser does not support ES modules. Please use a modern browser.</div>';
     </script>
-    <script type="module" src="/src/index.tsx"></script>
+    <script type="module" src="/src/main.tsx"></script> <!-- Update to the correct file name -->
   </body>
 </html>
