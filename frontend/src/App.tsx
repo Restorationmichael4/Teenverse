@@ -2,13 +2,13 @@ import React, { useEffect } from 'react';
 
 function App() {
   useEffect(() => {
-    // Add a debug message to the DOM directly
+    console.log('Debug: App.tsx is running');
     const debugDiv = document.createElement('div');
     debugDiv.innerText = 'Debug: App.tsx is running';
     debugDiv.style.position = 'fixed';
-    debugDiv.style.top = '0';
+    debugDiv.style.top = '100px';
     debugDiv.style.left = '0';
-    debugDiv.style.background = 'red';
+    debugDiv.style.background = 'blue';
     debugDiv.style.color = 'white';
     document.body.appendChild(debugDiv);
   }, []);
