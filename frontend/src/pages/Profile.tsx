@@ -18,27 +18,47 @@ export default function Profile() {
         const fetchUserStats = async () => {
             if (!user || !token) return;
             try {
-                const statsRes = await axios.post("/get-user-stats", { email: user.email }, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setXP(statsRes.data.xp);
-                setLevel(statsRes.data.level);
-                setRank(statsRes.data.rank);
+                // Fetch user stats
+                try {
+                    const statsRes = await axios.post("/get-user-stats", { email: user.email }, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    setXP(statsRes.data.xp || 0);
+                    setLevel(statsRes.data.level || 1);
+                    setRank(statsRes.data.rank || "Newbie");
+                } catch (err) {
+                    setMessage((prev) => prev + " Error fetching stats: " + (err.response?.data?.message || err.message));
+                }
 
-                const snitchRes = await axios.post("/get-snitch-status", { email: user.email }, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setSnitchStatus(snitchRes.data.snitchStatus);
+                // Fetch snitch status
+                try {
+                    const snitchRes = await axios.post("/get-snitch-status", { email: user.email }, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    setSnitchStatus(snitchRes.data.snitchStatus || "clean");
+                } catch (err) {
+                    setMessage((prev) => prev + " Error fetching snitch status: " + (err.response?.data?.message || err.message));
+                }
 
-                const modeRes = await axios.post("/toggle-mode", { email: user.email }, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setMode(modeRes.data.message.includes("main") ? "main" : "undercover");
+                // Fetch mode
+                try {
+                    const modeRes = await axios.post("/get-mode", { email: user.email }, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    setMode(modeRes.data.mode || "main");
+                } catch (err) {
+                    setMessage((prev) => prev + " Error fetching mode: " + (err.response?.data?.message || err.message));
+                }
 
-                const coinsRes = await axios.post("/get-coins", { email: user.email }, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setCoins(coinsRes.data.coins);
+                // Fetch coins
+                try {
+                    const coinsRes = await axios.post("/get-coins", { email: user.email }, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                    setCoins(coinsRes.data.coins || 0);
+                } catch (err) {
+                    setMessage((prev) => prev + " Error fetching coins: " + (err.response?.data?.message || err.message));
+                }
             } catch (err) {
                 setMessage("Error fetching profile data: " + (err.response?.data?.message || err.message));
             }
@@ -75,7 +95,12 @@ export default function Profile() {
 
     if (!user || !token) {
         return <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="text-center text-red-500 text-xl">Please log in to access your profile.</div>
+            <div className="text-center text-red-500 text-xl">
+                Please log in to access your profile.
+                <div className="mt-4 text-gray-800">
+                    Debug: user={JSON.stringify(user)}, token={token ? "Present" : "Missing"}
+                </div>
+            </div>
         </div>;
     }
 
@@ -126,4 +151,4 @@ export default function Profile() {
             </div>
         </div>
     );
-                        }
+        }
