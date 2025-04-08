@@ -15,7 +15,7 @@ export default function Login() {
             const res = await axios.post("/login", { email, password });
             setMessage(res.data.message);
             if (res.status === 200) {
-                login({ email }, res.data.token);
+                login({ email, username: res.data.username }, res.data.token);
                 setTimeout(() => navigate("/dashboard"), 2000);
             }
         } catch (err) {
@@ -54,4 +54,4 @@ export default function Login() {
             </div>
         </div>
     );
-                }
+}
