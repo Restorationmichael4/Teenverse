@@ -19,7 +19,7 @@ const SECRET_KEY = process.env.SECRET_KEY || "teenverse_secret";
 // Middleware to authenticate JWT token
 const authenticateToken = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
+    const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
         console.log(`[${new Date().toISOString()}] No token provided for ${req.path}`);
@@ -37,11 +37,8 @@ const authenticateToken = (req: express.Request, res: express.Response, next: ex
     }
 };
 
-// Serve static files and handle SPA routing
+// Serve static files
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
-});
 
 // Use post routes
 app.use('/api/posts', postRoutes);
@@ -202,10 +199,13 @@ app.post("/create-post", authenticateToken, async (req, res) => {
 
         if (!user) return res.status(404).json({ message: "User not found" });
 
+        const postMode = mode || user.mode;
+        console.log(`[${new Date().toISOString()}] Creating post with mode: ${postMode}`);
+
         await new Promise<void>((resolve, reject) => {
             db.run(
                 "INSERT INTO posts (user_id, username, content, mode) VALUES (?, ?, ?, ?)",
-                [user.id, user.username, content, mode || user.mode],
+                [user.id, user.username, content, postMode],
                 (err) => {
                     if (err) reject(err);
                     resolve();
@@ -231,7 +231,7 @@ app.post("/create-post", authenticateToken, async (req, res) => {
 
         res.json({ message: "Post created! +5 XP and +5 coins", newXP, newCoins });
     } catch (err) {
-        console.error("Create post error:", err);
+        console.error(`[${new Date().toISOString()}] Create post error:`, err);
         res.status(500).json({ message: "Error creating post" });
     }
 });
@@ -417,7 +417,6 @@ app.post("/like", authenticateToken, async (req, res) => {
 
         const userId = user.id;
 
-        // Check if user already liked the post
         const existingLike: any = await new Promise<any>((resolve, reject) => {
             db.get("SELECT id FROM likes WHERE post_id = ? AND user_id = ?", [postId, userId], (err, row) => {
                 if (err) reject(err);
@@ -495,9 +494,10 @@ app.get("/game-squads", authenticateToken, async (req, res) => {
                 resolve(rows);
             });
         });
+        console.log(`[${new Date().toISOString()}] /game-squads returned ${squads.length} squads`);
         res.json(squads);
     } catch (err) {
-        console.error("Get game squads error:", err);
+        console.error(`[${new Date().toISOString()}] Get game squads error:`, err);
         res.status(500).json({ message: "Internal server error" });
     }
 });
@@ -545,9 +545,10 @@ app.get("/api/hype-battles", authenticateToken, async (req, res) => {
                 resolve(rows);
             });
         });
+        console.log(`[${new Date().toISOString()}] /api/hype-battles returned ${battles.length} battles`);
         res.json(battles);
     } catch (err) {
-        console.error("Get hype battles error:", err);
+        console.error(`[${new Date().toISOString()}] Get hype battles error:`, err);
         res.status(500).json({ message: "Internal server error" });
     }
 });
@@ -833,9 +834,10 @@ app.get("/hall-of-fame", authenticateToken, async (req, res) => {
                 }
             );
         });
+        console.log(`[${new Date().toISOString()}] /hall-of-fame returned ${rankings.length} rankings`);
         res.json(rankings);
     } catch (err) {
-        console.error("Hall of fame error:", err);
+        console.error(`[${new Date().toISOString()}] Hall of fame error:`, err);
         res.status(500).json({ message: "Internal server error" });
     }
 });
@@ -904,6 +906,15 @@ app.post("/track-like", authenticateToken, async (req, res) => {
     }
 });
 
+// Catch-all route for SPA (must be at the end)
+app.get('*', (req, res) => {
+    // Check if the request is for an API route
+    if (req.path.startsWith('/api') || req.path === '/login' || req.path === '/register') {
+        return res.status(404).json({ message: "API endpoint not found" });
+    }
+    res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
+});
+
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 // Extend Express Request interface to include user
@@ -913,4 +924,4 @@ declare global {
             user?: { email: string, verified: number };
         }
     }
-                }
+                        }
