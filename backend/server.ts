@@ -43,8 +43,8 @@ app.use(express.static(path.join(__dirname, '../frontend/dist')));
 // Use post routes
 app.use('/api/posts', postRoutes);
 
-// Register endpoint
-app.post("/register", async (req, res) => {
+// Register endpoint (moved to /api/register)
+app.post("/api/register", async (req, res) => {
     try {
         const { email, username, password, dob } = req.body;
 
@@ -103,8 +103,8 @@ app.post("/register", async (req, res) => {
     }
 });
 
-// Login endpoint
-app.post("/login", async (req, res) => {
+// Login endpoint (moved to /api/login)
+app.post("/api/login", async (req, res) => {
     try {
         const { email, password } = req.body;
         const user: any = await new Promise<any>((resolve, reject) => {
@@ -127,7 +127,7 @@ app.post("/login", async (req, res) => {
 });
 
 // Toggle mode endpoint
-app.post("/toggle-mode", authenticateToken, async (req, res) => {
+app.post("/api/toggle-mode", authenticateToken, async (req, res) => {
     try {
         const { email } = req.body;
         if (req.user.email !== email) {
@@ -159,7 +159,7 @@ app.post("/toggle-mode", authenticateToken, async (req, res) => {
 });
 
 // Get mode endpoint
-app.post("/get-mode", authenticateToken, async (req, res) => {
+app.post("/api/get-mode", authenticateToken, async (req, res) => {
     try {
         const { email } = req.body;
         if (req.user.email !== email) {
@@ -183,7 +183,7 @@ app.post("/get-mode", authenticateToken, async (req, res) => {
 });
 
 // Create post endpoint
-app.post("/create-post", authenticateToken, async (req, res) => {
+app.post("/api/create-post", authenticateToken, async (req, res) => {
     try {
         const { email, content, mode } = req.body;
         if (req.user.email !== email) {
@@ -237,7 +237,7 @@ app.post("/create-post", authenticateToken, async (req, res) => {
 });
 
 // Get coins endpoint
-app.post("/get-coins", authenticateToken, async (req, res) => {
+app.post("/api/get-coins", authenticateToken, async (req, res) => {
     try {
         const { email } = req.body;
         if (req.user.email !== email) {
@@ -260,12 +260,12 @@ app.post("/get-coins", authenticateToken, async (req, res) => {
 });
 
 // Buy coins endpoint (placeholder)
-app.post("/buy-coins", authenticateToken, (req, res) => {
+app.post("/api/buy-coins", authenticateToken, (req, res) => {
     res.json({ message: "Buying coins is not available yet." });
 });
 
 // Daily login endpoint
-app.post("/daily-login", authenticateToken, async (req, res) => {
+app.post("/api/daily-login", authenticateToken, async (req, res) => {
     try {
         const { email } = req.body;
         if (req.user.email !== email) {
@@ -305,7 +305,7 @@ app.post("/daily-login", authenticateToken, async (req, res) => {
 });
 
 // Get user stats endpoint
-app.post("/get-user-stats", authenticateToken, async (req, res) => {
+app.post("/api/get-user-stats", authenticateToken, async (req, res) => {
     try {
         const { email } = req.body;
         if (req.user.email !== email) {
@@ -330,7 +330,7 @@ app.post("/get-user-stats", authenticateToken, async (req, res) => {
 });
 
 // Get snitch status endpoint
-app.post("/get-snitch-status", authenticateToken, async (req, res) => {
+app.post("/api/get-snitch-status", authenticateToken, async (req, res) => {
     try {
         const { email } = req.body;
         if (req.user.email !== email) {
@@ -399,7 +399,7 @@ function checkSnitchStatus() {
 setInterval(checkSnitchStatus, 86400000);
 
 // Like a post endpoint
-app.post("/like", authenticateToken, async (req, res) => {
+app.post("/api/like", authenticateToken, async (req, res) => {
     try {
         const { postId, email } = req.body;
         if (req.user.email !== email) {
@@ -486,7 +486,7 @@ app.post("/like", authenticateToken, async (req, res) => {
 });
 
 // Game Squad endpoints
-app.get("/game-squads", authenticateToken, async (req, res) => {
+app.get("/api/game-squads", authenticateToken, async (req, res) => {
     try {
         const squads: any[] = await new Promise<any[]>((resolve, reject) => {
             db.all("SELECT * FROM game_squads ORDER BY created_at DESC", [], (err, rows) => {
@@ -494,7 +494,7 @@ app.get("/game-squads", authenticateToken, async (req, res) => {
                 resolve(rows);
             });
         });
-        console.log(`[${new Date().toISOString()}] /game-squads returned ${squads.length} squads`);
+        console.log(`[${new Date().toISOString()}] /api/game-squads returned ${squads.length} squads`);
         res.json(squads);
     } catch (err) {
         console.error(`[${new Date().toISOString()}] Get game squads error:`, err);
@@ -502,7 +502,7 @@ app.get("/game-squads", authenticateToken, async (req, res) => {
     }
 });
 
-app.post("/game-squads", authenticateToken, async (req, res) => {
+app.post("/api/game-squads", authenticateToken, async (req, res) => {
     try {
         const { email, gameName, uid, description } = req.body;
         if (req.user.email !== email) {
@@ -822,7 +822,7 @@ app.post("/api/coin-flip", authenticateToken, async (req, res) => {
 });
 
 // Hall of Fame endpoint
-app.get("/hall-of-fame", authenticateToken, async (req, res) => {
+app.get("/api/hall-of-fame", authenticateToken, async (req, res) => {
     try {
         const rankings: any[] = await new Promise<any[]>((resolve, reject) => {
             db.all(
@@ -834,7 +834,7 @@ app.get("/hall-of-fame", authenticateToken, async (req, res) => {
                 }
             );
         });
-        console.log(`[${new Date().toISOString()}] /hall-of-fame returned ${rankings.length} rankings`);
+        console.log(`[${new Date().toISOString()}] /api/hall-of-fame returned ${rankings.length} rankings`);
         res.json(rankings);
     } catch (err) {
         console.error(`[${new Date().toISOString()}] Hall of fame error:`, err);
@@ -843,7 +843,7 @@ app.get("/hall-of-fame", authenticateToken, async (req, res) => {
 });
 
 // Track like endpoint (for Hall of Fame)
-app.post("/track-like", authenticateToken, async (req, res) => {
+app.post("/api/track-like", authenticateToken, async (req, res) => {
     try {
         const { email, postId } = req.body;
         if (req.user.email !== email) {
@@ -908,10 +908,11 @@ app.post("/track-like", authenticateToken, async (req, res) => {
 
 // Catch-all route for SPA (must be at the end)
 app.get('*', (req, res) => {
-    // Check if the request is for an API route
-    if (req.path.startsWith('/api') || req.path === '/login' || req.path === '/register') {
+    // Only return 404 for /api/* routes that aren't matched
+    if (req.path.startsWith('/api/')) {
         return res.status(404).json({ message: "API endpoint not found" });
     }
+    // Serve index.html for all other routes (client-side routing)
     res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 });
 
@@ -924,4 +925,4 @@ declare global {
             user?: { email: string, verified: number };
         }
     }
-                        }
+                                                                        }
