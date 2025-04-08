@@ -22,15 +22,17 @@ const authenticateToken = (req: express.Request, res: express.Response, next: ex
     const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
 
     if (!token) {
+        console.log(`[${new Date().toISOString()}] No token provided for ${req.path}`);
         return res.status(401).json({ message: "Authentication token required" });
     }
 
     try {
         const decoded = jwt.verify(token, SECRET_KEY) as { email: string, verified: number };
-        req.user = decoded; // Attach decoded user to request
+        req.user = decoded;
+        console.log(`[${new Date().toISOString()}] Token verified for ${req.path}, user: ${decoded.email}`);
         next();
     } catch (err) {
-        console.error("Token verification error:", err);
+        console.log(`[${new Date().toISOString()}] Token verification failed for ${req.path}: ${err.message}`);
         return res.status(403).json({ message: "Invalid or expired token" });
     }
 };
