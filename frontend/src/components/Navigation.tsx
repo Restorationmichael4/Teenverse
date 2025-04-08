@@ -1,47 +1,41 @@
-// src/components/Navigation.tsx
-import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
-const Navigation = () => {
-  return (
-    <nav style={navStyle}>
-      <ul style={navListStyle}>
-        <li><Link to="/home" style={linkStyle}>Home</Link></li>
-        <li><Link to="/profile" style={linkStyle}>Profile</Link></li>
-        <li><Link to="/rant-zone" style={linkStyle}>Rant Zone</Link></li>
-        <li><Link to="/game-squad" style={linkStyle}>Game Squad</Link></li>
-        <li><Link to="/coin-flip" style={linkStyle}>Coin Flip</Link></li>
-        <li><Link to="/hype-battles" style={linkStyle}>Hype Battles</Link></li>
-        <li><Link to="/ultimate-showdown" style={linkStyle}>Ultimate Showdown</Link></li>
-        <li><Link to="/clout-missions" style={linkStyle}>Clout Missions</Link></li>
-        <li><Link to="/hall-of-fame" style={linkStyle}>Hall of Fame</Link></li>
-        <li><Link to="/logout" style={linkStyle}>Logout</Link></li>
-      </ul>
-    </nav>
-  );
-};
+export default function Navigation() {
+    const { user, logout } = useAuth();
+    const navigate = useNavigate();
 
-const navStyle = {
-  backgroundColor: '#2C3E50',
-  padding: '10px 0',
-  position: 'sticky',
-  top: 0,
-  zIndex: 1000,
-};
+    const handleLogout = () => {
+        logout();
+        navigate("/");
+    };
 
-const navListStyle = {
-  display: 'flex',
-  justifyContent: 'center',
-  margin: 0,
-  padding: 0,
-  listStyleType: 'none',
-};
-
-const linkStyle = {
-  color: '#FFF',
-  padding: '10px 20px',
-  textDecoration: 'none',
-  fontSize: '16px',
-};
-
-export default Navigation;
+    return (
+        <nav className="bg-indigo-600 p-4 sticky top-0 z-50">
+            <div className="max-w-4xl mx-auto flex justify-between items-center">
+                <h1 className="text-white text-2xl font-bold">TeenVerse</h1>
+                <div className="flex space-x-4">
+                    <Link to="/dashboard" className="text-white hover:text-indigo-200">Dashboard</Link>
+                    <Link to="/rant-zone" className="text-white hover:text-indigo-200">Rant Zone</Link>
+                    <Link to="/game-squad" className="text-white hover:text-indigo-200">Game Squad</Link>
+                    <Link to="/coin-flip" className="text-white hover:text-indigo-200">Coin Flip</Link>
+                    <Link to="/hype-battles" className="text-white hover:text-indigo-200">Hype Battles</Link>
+                    <Link to="/ultimate-showdown" className="text-white hover:text-indigo-200">Ultimate Showdown</Link>
+                    <Link to="/clout-missions" className="text-white hover:text-indigo-200">Clout Missions</Link>
+                    <Link to="/hall-of-fame" className="text-white hover:text-indigo-200">Hall of Fame</Link>
+                    <Link to="/profile" className="text-white hover:text-indigo-200">Profile</Link>
+                    {user ? (
+                        <button
+                            onClick={handleLogout}
+                            className="text-white hover:text-indigo-200"
+                        >
+                            Logout
+                        </button>
+                    ) : (
+                        <Link to="/" className="text-white hover:text-indigo-200">Login</Link>
+                    )}
+                </div>
+            </div>
+        </nav>
+    );
+}
