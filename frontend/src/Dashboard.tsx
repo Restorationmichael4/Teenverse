@@ -3,6 +3,14 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 
+interface Post {
+    id: number;
+    username: string;
+    content: string;
+    mode: string;
+    created_at: string;
+}
+
 export default function Dashboard() {
     const [content, setContent] = useState("");
     const [rantContent, setRantContent] = useState("");
@@ -10,10 +18,10 @@ export default function Dashboard() {
     const [coinflipResult, setCoinflipResult] = useState("");
     const [mode, setMode] = useState("main");
     const [betAmount, setBetAmount] = useState(10);
+    const [posts, setPosts] = useState<Post[]>([]);
     const { user, token, logout } = useAuth();
     const navigate = useNavigate();
 
-    // Fetch user mode on mount
     useEffect(() => {
         const fetchMode = async () => {
             try {
@@ -25,7 +33,22 @@ export default function Dashboard() {
                 setMessage("Error fetching mode: " + (err.response?.data?.message || err.message));
             }
         };
-        if (user && token) fetchMode();
+
+        const fetchPosts = async () => {
+            try {
+                const res = await axios.get("/posts", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setPosts(res.data);
+            } catch (err) {
+                setMessage("Error fetching posts: " + (err.response?.data?.message || err.message));
+            }
+        };
+
+        if (user && token) {
+            fetchMode();
+            fetchPosts();
+        }
     }, [user, token]);
 
     const handlePost = async (isRant = false) => {
@@ -42,6 +65,11 @@ export default function Dashboard() {
             setMessage(res.data.message);
             if (isRant) setRantContent("");
             else setContent("");
+            // Refresh posts after posting
+            const postsRes = await axios.get("/posts", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setPosts(postsRes.data);
         } catch (err) {
             setMessage("Error posting: " + (err.response?.data?.message || err.message));
         }
@@ -62,7 +90,7 @@ export default function Dashboard() {
     const handleCoinflip = async () => {
         try {
             const res = await axios.post("/api/coin-flip", {
-                userId: user?.email, // Using email as userId for now
+                userId: user?.email,
                 betAmount
             }, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -87,7 +115,7 @@ export default function Dashboard() {
         <div className="min-h-screen bg-gray-100 p-6">
             <div className="max-w-4xl mx-auto">
                 <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-bold text-gray-800">Welcome to TeenVerse, {user.email}!</h1>
+                    <h1 className="text-3xl font-bold text-gray-800">Welcome to TeenVerse, {user.username || user.email}!</h1>
                     <button
                         onClick={handleLogout}
                         className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition"
@@ -130,6 +158,22 @@ export default function Dashboard() {
                     >
                         Post Rant
                     </button>
+                </div>
+
+                {/* Display Posts */}
+                <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
+                    <h2 className="text-xl font-semibold text-gray-800 mb-4">Recent Posts</h2>
+                    {posts.length > 0 ? (
+                        posts.map((post) => (
+                            <div key={post.id} className="border-b py-4">
+                                <p className="text-gray-800 font-semibold">{post.username}</p>
+                                <p className="text-gray-600">{post.content}</p>
+                                <p className="text-gray-500 text-sm">{new Date(post.created_at).toLocaleString()}</p>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="text-gray-600">No posts yet.</p>
+                    )}
                 </div>
 
                 {/* Profile Mode Section */}
