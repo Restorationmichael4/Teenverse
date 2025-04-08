@@ -1,9 +1,10 @@
 import express from 'express';
+import jwt from 'jsonwebtoken'; // Add this import
 import { db } from '../database';
 
 const router = express.Router();
 
-// Middleware to authenticate JWT token (redefined here for clarity)
+// Middleware to authenticate JWT token
 const authenticateToken = (req: express.Request, res: express.Response, next: express.NextFunction) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
@@ -91,4 +92,4 @@ declare global {
             user?: { email: string, verified: number };
         }
     }
-                      }
+            }
