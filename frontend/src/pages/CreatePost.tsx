@@ -21,7 +21,7 @@ export default function CreatePost() {
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setMessage(res.data.message);
+            setMessage(res.data.message + " Check the Dashboard or News Feed to see your post.");
             setContent("");
         } catch (err) {
             setMessage("Error posting: " + (err.response?.data?.message || err.message));
@@ -30,7 +30,12 @@ export default function CreatePost() {
 
     if (!user || !token) {
         return <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="text-center text-red-500 text-xl">Please log in to create a post.</div>
+            <div className="text-center text-red-500 text-xl">
+                Please log in to create a post.
+                <div className="mt-4 text-gray-800">
+                    Debug: user={JSON.stringify(user)}, token={token ? "Present" : "Missing"}
+                </div>
+            </div>
         </div>;
     }
 
@@ -60,4 +65,4 @@ export default function CreatePost() {
             </div>
         </div>
     );
-            }
+}
