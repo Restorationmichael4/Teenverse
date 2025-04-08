@@ -13,6 +13,7 @@ import HallOfFame from './pages/HallofFame.tsx';
 import Login from './pages/Login';
 import Register from './Register';
 import { useAuth } from './hooks/useAuth'; // Custom hook for user auth
+import Dashboard from "./Dashboard";
 
 const App = () => {
   const { user, isLoggedIn } = useAuth();
