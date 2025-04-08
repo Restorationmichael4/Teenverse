@@ -26,7 +26,9 @@ export default function RantZone() {
                 const res = await axios.get("/posts", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                const rantPosts = res.data.filter((post: Post) => post.mode === "rant");
+                // Ensure res.data is an array before filtering
+                const posts = Array.isArray(res.data) ? res.data : [];
+                const rantPosts = posts.filter((post: Post) => post.mode === "rant");
                 setRants(rantPosts);
             } catch (err) {
                 setMessage("Error fetching rants: " + (err.response?.data?.message || err.message));
@@ -64,7 +66,9 @@ export default function RantZone() {
             const postsRes = await axios.get("/posts", {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            const rantPosts = postsRes.data.filter((post: Post) => post.mode === "rant");
+            // Ensure postsRes.data is an array before filtering
+            const posts = Array.isArray(postsRes.data) ? postsRes.data : [];
+            const rantPosts = posts.filter((post: Post) => post.mode === "rant");
             setRants(rantPosts);
         } catch (err) {
             setMessage("Error posting rant: " + (err.response?.data?.message || err.message));
@@ -86,7 +90,9 @@ export default function RantZone() {
             const postsRes = await axios.get("/posts", {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            const rantPosts = postsRes.data.filter((post: Post) => post.mode === "rant");
+            // Ensure postsRes.data is an array before filtering
+            const posts = Array.isArray(postsRes.data) ? postsRes.data : [];
+            const rantPosts = posts.filter((post: Post) => post.mode === "rant");
             setRants(rantPosts);
         } catch (err) {
             setMessage("Error liking rant: " + (err.response?.data?.message || err.message));
@@ -95,7 +101,12 @@ export default function RantZone() {
 
     if (!user || !token) {
         return <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="text-center text-red-500 text-xl">Please log in to access the Rant Zone.</div>
+            <div className="text-center text-red-500 text-xl">
+                Please log in to access the Rant Zone.
+                <div className="mt-4 text-gray-800">
+                    Debug: user={JSON.stringify(user)}, token={token ? "Present" : "Missing"}
+                </div>
+            </div>
         </div>;
     }
 
@@ -154,4 +165,4 @@ export default function RantZone() {
             </div>
         </div>
     );
-    }
+        }
