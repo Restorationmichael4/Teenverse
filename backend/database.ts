@@ -7,6 +7,7 @@ export const db = new sqlite3.Database("users.db", (err) => {
 db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE,
+    username TEXT UNIQUE,  -- Add username column
     password TEXT,
     dob TEXT,
     verified INTEGER,
@@ -24,6 +25,7 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
 db.run(`CREATE TABLE IF NOT EXISTS posts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
+    username TEXT,  -- Add username column to posts
     content TEXT,
     likes INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
