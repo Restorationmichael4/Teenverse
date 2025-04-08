@@ -4,10 +4,11 @@ export const db = new sqlite3.Database("users.db", (err) => {
     if (err) console.error("Database connection error:", err);
 });
 
+// Users table
 db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE,
-    username TEXT UNIQUE,  -- Add username column
+    username TEXT UNIQUE,
     password TEXT,
     dob TEXT,
     verified INTEGER,
@@ -16,16 +17,17 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
     xp INTEGER DEFAULT 0,
     level INTEGER DEFAULT 1,
     last_login TEXT DEFAULT NULL,
-    snitch_status TEXT DEFAULT 'clean'
+    snitch_status TEXT DEFAULT 'clean',
+    title TEXT DEFAULT NULL
 )`, (err) => {
     if (err) console.error("Error creating users table:", err);
 });
 
-// Create Posts Table (stores likes & expiration)
+// Posts table
 db.run(`CREATE TABLE IF NOT EXISTS posts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
-    username TEXT,  -- Add username column to posts
+    username TEXT,
     content TEXT,
     likes INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -35,11 +37,12 @@ db.run(`CREATE TABLE IF NOT EXISTS posts (
     if (err) console.error("Error creating posts table:", err);
 });
 
-// Table for likes
+// Likes table
 db.run(`CREATE TABLE IF NOT EXISTS likes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     post_id INTEGER,
     user_id INTEGER,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(post_id, user_id),
     FOREIGN KEY(post_id) REFERENCES posts(id),
     FOREIGN KEY(user_id) REFERENCES users(id)
@@ -47,7 +50,7 @@ db.run(`CREATE TABLE IF NOT EXISTS likes (
     if (err) console.error("Error creating likes table:", err);
 });
 
-// Table for badges
+// Badges table
 db.run(`CREATE TABLE IF NOT EXISTS badges (
     user_id INTEGER PRIMARY KEY,
     news_king BOOLEAN DEFAULT 0,
@@ -56,7 +59,7 @@ db.run(`CREATE TABLE IF NOT EXISTS badges (
     if (err) console.error("Error creating badges table:", err);
 });
 
-// Table for coin flip history
+// Coin flip history table
 db.run(`CREATE TABLE IF NOT EXISTS coin_flip_history (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -69,10 +72,11 @@ db.run(`CREATE TABLE IF NOT EXISTS coin_flip_history (
     if (err) console.error("Error creating coin flip history table:", err);
 });
 
-// Table for hype battles
+// Hype battles table
 db.run(`CREATE TABLE IF NOT EXISTS hype_battles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
+    username TEXT,
     content TEXT,
     votes INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -82,7 +86,7 @@ db.run(`CREATE TABLE IF NOT EXISTS hype_battles (
     if (err) console.error("Error creating hype battles table:", err);
 });
 
-// Table for battle votes
+// Battle votes table
 db.run(`CREATE TABLE IF NOT EXISTS battle_votes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -93,19 +97,43 @@ db.run(`CREATE TABLE IF NOT EXISTS battle_votes (
     if (err) console.error("Error creating battle votes table:", err);
 });
 
-// Table for showdown votes
+// Showdown votes table
 db.run(`CREATE TABLE IF NOT EXISTS showdown_votes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
-    date_option TEXT
+    date_option TEXT,
+    FOREIGN KEY(user_id) REFERENCES users(id)
 )`, (err) => {
     if (err) console.error("Error creating showdown votes table:", err);
 });
 
-// Table for scheduled battles
+// Scheduled battles table
 db.run(`CREATE TABLE IF NOT EXISTS scheduled_battles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     date TEXT
 )`, (err) => {
     if (err) console.error("Error creating scheduled battles table:", err);
+});
+
+// Game squads table
+db.run(`CREATE TABLE IF NOT EXISTS game_squads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER,
+    username TEXT,
+    game_name TEXT,
+    uid TEXT,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+)`, (err) => {
+    if (err) console.error("Error creating game squads table:", err);
+});
+
+// Hall of Fame table
+db.run(`CREATE TABLE IF NOT EXISTS hall_of_fame (
+    user_id INTEGER PRIMARY KEY,
+    total_likes INTEGER DEFAULT 0,
+    FOREIGN KEY(user_id) REFERENCES users(id)
+)`, (err) => {
+    if (err) console.error("Error creating hall of fame table:", err);
 });
