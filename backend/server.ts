@@ -7,7 +7,6 @@ import path from "path";
 import postRoutes from './routes/posts';
 import { db } from "./database";
 
-// Initialize dotenv
 dotenv.config();
 
 const app = express();
@@ -19,25 +18,24 @@ app.use('/api/posts', postRoutes);
 const PORT = process.env.PORT || 5000;
 const SECRET_KEY = process.env.SECRET_KEY || "teenverse_secret";
 
-// Serve static files from the frontend build directory
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
-// Catch all route to serve index.html for any route not handled by the API
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, '../frontend/dist', 'index.html'));
 });
 
-// Register Route
 app.post("/register", async (req, res) => {
     try {
-        const { email, password, dob } = req.body;
+        const { email, username, password, dob } = req.body;
 
-        // Validate DOB format (YYYY-MM-DD)
+        if (!email || !username || !password || !dob) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
         if (!dob || !/^\d{4}-\d{2}-\d{2}$/.test(dob)) {
             return res.status(400).json({ message: "Invalid date of birth format. Use YYYY-MM-DD." });
         }
 
-        // Calculate age accurately
         const birthDate = new Date(dob);
         const today = new Date();
         let age = today.getFullYear() - birthDate.getFullYear();
@@ -50,24 +48,27 @@ app.post("/register", async (req, res) => {
             return res.status(400).json({ message: "Get Out, Oldie. This Ain’t for You" });
         }
 
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        // Check if the user already exists
         const existingUser: any = await new Promise<any>((resolve, reject) => {
-            db.get("SELECT email FROM users WHERE email = ?", [email], (err, row) => {
+            db.get("SELECT email, username FROM users WHERE email = ? OR username = ?", [email, username], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
             });
         });
         if (existingUser) {
-            return res.status(400).json({ message: "User already exists" });
+            if (existingUser.email === email) {
+                return res.status(400).json({ message: "Email already exists" });
+            }
+            if (existingUser.username === username) {
+                return res.status(400).json({ message: "Username already taken" });
+            }
         }
 
-        // Insert the new user
+        const hashedPassword = await bcrypt.hash(password, 10);
+
         await new Promise<void>((resolve, reject) => {
             db.run(
-                "INSERT INTO users (email, password, dob, verified) VALUES (?, ?, ?, ?)",
-                [email, hashedPassword, dob, 0],
+                "INSERT INTO users (email, username, password, dob, verified) VALUES (?, ?, ?, ?, ?)",
+                [email, username, hashedPassword, dob, 0],
                 (err) => {
                     if (err) reject(err);
                     resolve();
@@ -82,7 +83,6 @@ app.post("/register", async (req, res) => {
     }
 });
 
-// Login Route
 app.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -98,14 +98,13 @@ app.post("/login", async (req, res) => {
         }
 
         const token = jwt.sign({ email: user.email, verified: user.verified }, SECRET_KEY, { expiresIn: "1h" });
-        res.json({ token, message: "Login successful" });
+        res.json({ token, message: "Login successful", username: user.username }); // Return username
     } catch (err) {
         console.error("Login error:", err);
         res.status(500).json({ message: "Internal server error" });
     }
 });
 
-// Toggle User Mode (Main <-> Undercover)
 app.post("/toggle-mode", async (req, res) => {
     try {
         const { email } = req.body;
@@ -133,12 +132,11 @@ app.post("/toggle-mode", async (req, res) => {
     }
 });
 
-// Create Post Route
 app.post("/create-post", async (req, res) => {
     try {
-        const { email, content } = req.body;
+        const { email, content, mode } = req.body;
         const user: any = await new Promise<any>((resolve, reject) => {
-            db.get("SELECT id, mode, xp, coins FROM users WHERE email = ?", [email], (err, row) => {
+            db.get("SELECT id, username, mode, xp, coins FROM users WHERE email = ?", [email], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
             });
@@ -148,8 +146,8 @@ app.post("/create-post", async (req, res) => {
 
         await new Promise<void>((resolve, reject) => {
             db.run(
-                "INSERT INTO posts (user_id, content, mode) VALUES (?, ?, ?)",
-                [user.id, content, user.mode],
+                "INSERT INTO posts (user_id, username, content, mode) VALUES (?, ?, ?, ?)",
+                [user.id, user.username, content, mode || user.mode],
                 (err) => {
                     if (err) reject(err);
                     resolve();
@@ -180,7 +178,6 @@ app.post("/create-post", async (req, res) => {
     }
 });
 
-// Get Coins Route
 app.post("/get-coins", async (req, res) => {
     try {
         const { email } = req.body;
@@ -199,12 +196,10 @@ app.post("/get-coins", async (req, res) => {
     }
 });
 
-// Buy Coins Route
 app.post("/buy-coins", (req, res) => {
     res.json({ message: "Buying coins is not available yet." });
 });
 
-// Daily Login Route
 app.post("/daily-login", async (req, res) => {
     try {
         const { email } = req.body;
@@ -240,7 +235,6 @@ app.post("/daily-login", async (req, res) => {
     }
 });
 
-// Get User Stats Route
 app.post("/get-user-stats", async (req, res) => {
     try {
         const { email } = req.body;
@@ -302,10 +296,8 @@ function checkSnitchStatus() {
     });
 }
 
-// Run snitch check every 24 hours
 setInterval(checkSnitchStatus, 86400000);
 
-// Post Route
 app.post("/post", async (req, res) => {
     try {
         const { userId, content, mode } = req.body;
@@ -326,7 +318,6 @@ app.post("/post", async (req, res) => {
     }
 });
 
-// Like Route
 app.post("/like", async (req, res) => {
     try {
         const { userId, postId } = req.body;
@@ -387,7 +378,6 @@ app.post("/like", async (req, res) => {
     }
 });
 
-// Get Posts Route
 app.get("/posts", async (req, res) => {
     try {
         const posts: any[] = await new Promise<any[]>((resolve, reject) => {
@@ -403,7 +393,6 @@ app.get("/posts", async (req, res) => {
     }
 });
 
-// Get Game Squad Route
 app.get("/game-squad", async (req, res) => {
     try {
         const posts: any[] = await new Promise<any[]>((resolve, reject) => {
@@ -419,11 +408,10 @@ app.get("/game-squad", async (req, res) => {
     }
 });
 
-// Get Rant Zone Route
 app.get("/rant-zone", async (req, res) => {
     try {
         const posts: any[] = await new Promise<any[]>((resolve, reject) => {
-            db.all("SELECT id, content, likes FROM posts WHERE mode = 'rant' ORDER BY created_at DESC", [], (err, rows) => {
+            db.all("SELECT id, username, content, likes FROM posts WHERE mode = 'rant' ORDER BY created_at DESC", [], (err, rows) => {
                 if (err) reject(err);
                 resolve(rows);
             });
@@ -435,7 +423,6 @@ app.get("/rant-zone", async (req, res) => {
     }
 });
 
-// Coin Flip Route
 app.post("/api/coin-flip", async (req, res) => {
     try {
         const { userId, betAmount } = req.body;
@@ -444,7 +431,7 @@ app.post("/api/coin-flip", async (req, res) => {
         }
 
         const user: any = await new Promise<any>((resolve, reject) => {
-            db.get("SELECT coins FROM users WHERE id = ?", [userId], (err, row) => {
+            db.get("SELECT id, coins FROM users WHERE email = ?", [userId], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
             });
@@ -459,14 +446,14 @@ app.post("/api/coin-flip", async (req, res) => {
         let winnings = 0;
 
         if (isWin) {
-            winnings = Math.floor(betAmount * 2 * 0.95); // 5% house cut
+            winnings = Math.floor(betAmount * 2 * 0.95);
             newBalance += winnings;
         } else {
             newBalance -= betAmount;
         }
 
         await new Promise<void>((resolve, reject) => {
-            db.run("UPDATE users SET coins = ? WHERE id = ?", [newBalance, userId], (err) => {
+            db.run("UPDATE users SET coins = ? WHERE id = ?", [newBalance, user.id], (err) => {
                 if (err) reject(err);
                 resolve();
             });
@@ -475,7 +462,7 @@ app.post("/api/coin-flip", async (req, res) => {
         await new Promise<void>((resolve, reject) => {
             db.run(
                 "INSERT INTO coin_flip_history (user_id, bet_amount, won_amount, result) VALUES (?, ?, ?, ?)",
-                [userId, betAmount, winnings, isWin ? "win" : "lose"],
+                [user.id, betAmount, winnings, isWin ? "win" : "lose"],
                 (err) => {
                     if (err) reject(err);
                     resolve();
@@ -490,7 +477,6 @@ app.post("/api/coin-flip", async (req, res) => {
     }
 });
 
-// Create Hype Battle Post Route
 app.post("/api/hype-battle", async (req, res) => {
     try {
         const { userId, content } = req.body;
@@ -511,7 +497,6 @@ app.post("/api/hype-battle", async (req, res) => {
     }
 });
 
-// Vote for Battle Post Route
 app.post("/api/vote-battle", async (req, res) => {
     try {
         const { userId, battleId } = req.body;
@@ -551,7 +536,6 @@ app.post("/api/vote-battle", async (req, res) => {
     }
 });
 
-// Determine Battle Winners after 24 hours
 app.get("/api/determine-winners", async (req, res) => {
     try {
         const battles: any[] = await new Promise<any[]>((resolve, reject) => {
@@ -600,7 +584,6 @@ app.get("/api/determine-winners", async (req, res) => {
     }
 });
 
-// Vote for Showdown Battle Date Route
 app.post("/api/vote-showdown", async (req, res) => {
     try {
         const { userId, dateOption } = req.body;
@@ -629,7 +612,6 @@ app.post("/api/vote-showdown", async (req, res) => {
     }
 });
 
-// Determine the Next Showdown Date
 app.get("/api/determine-showdown-date", async (req, res) => {
     try {
         const result: any = await new Promise<any>((resolve, reject) => {
@@ -660,7 +642,6 @@ app.get("/api/determine-showdown-date", async (req, res) => {
     }
 });
 
-// Track Likes and Check for Clout Missions Qualification
 app.post('/track-like', async (req, res) => {
     try {
         const { userId, postId } = req.body;
@@ -709,7 +690,6 @@ app.post('/track-like', async (req, res) => {
     }
 });
 
-// Fetch Hall of Fame Rankings
 app.get('/hall-of-fame', async (req, res) => {
     try {
         const rankings: any[] = await new Promise<any[]>((resolve, reject) => {
@@ -725,5 +705,4 @@ app.get('/hall-of-fame', async (req, res) => {
     }
 });
 
-// Start Server
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
