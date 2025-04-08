@@ -7,7 +7,6 @@ interface AuthContextType {
     logout: () => void;
 }
 
-// Provide a default value to avoid undefined
 const defaultContextValue: AuthContextType = {
     user: null,
     token: null,
@@ -24,6 +23,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const storedUser = localStorage.getItem("user");
         const storedToken = localStorage.getItem("token");
+        console.log("AuthProvider - Stored User:", storedUser); // Debug: Log stored user
+        console.log("AuthProvider - Stored Token:", storedToken); // Debug: Log stored token
         if (storedUser && storedToken) {
             setUser(JSON.parse(storedUser));
             setToken(storedToken);
@@ -31,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     const login = (user: { email: string; username?: string }, token: string) => {
+        console.log("AuthProvider - Setting user:", user, "token:", token); // Debug: Log login values
         setUser(user);
         setToken(token);
         localStorage.setItem("user", JSON.stringify(user));
@@ -38,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const logout = () => {
+        console.log("AuthProvider - Logging out"); // Debug: Log logout
         setUser(null);
         setToken(null);
         localStorage.removeItem("user");
