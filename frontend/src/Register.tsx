@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function Register() {
     const [email, setEmail] = useState("");
+    const [username, setUsername] = useState(""); // Add username state
     const [password, setPassword] = useState("");
     const [dob, setDob] = useState("");
     const [message, setMessage] = useState("");
@@ -11,18 +12,18 @@ export default function Register() {
 
     const handleRegister = async () => {
         try {
-            if (!email || !password || !dob) {
+            if (!email || !username || !password || !dob) {
                 setMessage("Please fill in all fields");
                 return;
             }
 
             const formattedDob = new Date(dob).toISOString().split("T")[0];
-            console.log("Sending registration data:", { email, password, dob: formattedDob });
+            console.log("Sending registration data:", { email, username, password, dob: formattedDob });
 
-            const res = await axios.post("/register", { email, password, dob: formattedDob });
+            const res = await axios.post("/register", { email, username, password, dob: formattedDob });
             setMessage(res.data.message);
             if (res.status === 200) {
-                localStorage.setItem("user", JSON.stringify({ email }));
+                localStorage.setItem("user", JSON.stringify({ email, username }));
                 setTimeout(() => navigate("/"), 2000);
             }
         } catch (err) {
@@ -53,6 +54,13 @@ export default function Register() {
                     className="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
                 <input
+                    type="text"
+                    placeholder="Username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <input
                     type="password"
                     placeholder="Password"
                     value={password}
@@ -78,4 +86,4 @@ export default function Register() {
             </div>
         </div>
     );
-        }
+                    }
