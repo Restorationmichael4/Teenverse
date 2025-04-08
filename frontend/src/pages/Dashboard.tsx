@@ -22,6 +22,10 @@ export default function Dashboard() {
     const { user, token, logout } = useAuth();
     const navigate = useNavigate();
 
+    // Debug: Log user and token
+    console.log("Dashboard - User:", user);
+    console.log("Dashboard - Token:", token);
+
     useEffect(() => {
         const fetchMode = async () => {
             try {
@@ -65,7 +69,6 @@ export default function Dashboard() {
             setMessage(res.data.message);
             if (isRant) setRantContent("");
             else setContent("");
-            // Refresh posts after posting
             const postsRes = await axios.get("/posts", {
                 headers: { Authorization: `Bearer ${token}` }
             });
@@ -126,7 +129,6 @@ export default function Dashboard() {
 
                 <p className="text-center text-green-600 mb-6">{message}</p>
 
-                {/* Post Section */}
                 <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
                     <h2 className="text-xl font-semibold text-gray-800 mb-4">Create a Post</h2>
                     <textarea
@@ -143,7 +145,6 @@ export default function Dashboard() {
                     </button>
                 </div>
 
-                {/* Rant Section */}
                 <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
                     <h2 className="text-xl font-semibold text-gray-800 mb-4">Post a Rant</h2>
                     <textarea
@@ -160,7 +161,6 @@ export default function Dashboard() {
                     </button>
                 </div>
 
-                {/* Display Posts */}
                 <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
                     <h2 className="text-xl font-semibold text-gray-800 mb-4">Recent Posts</h2>
                     {posts.length > 0 ? (
@@ -176,7 +176,6 @@ export default function Dashboard() {
                     )}
                 </div>
 
-                {/* Profile Mode Section */}
                 <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
                     <h2 className="text-xl font-semibold text-gray-800 mb-4">Profile Mode</h2>
                     <p className="text-gray-600 mb-4">Current Mode: {mode}</p>
@@ -188,7 +187,6 @@ export default function Dashboard() {
                     </button>
                 </div>
 
-                {/* Coinflip Section */}
                 <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
                     <h2 className="text-xl font-semibold text-gray-800 mb-4">Coinflip Game</h2>
                     <input
@@ -212,4 +210,4 @@ export default function Dashboard() {
             </div>
         </div>
     );
-                                            }
+                        }
