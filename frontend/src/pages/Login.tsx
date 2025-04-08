@@ -13,12 +13,16 @@ export default function Login() {
     const handleLogin = async () => {
         try {
             const res = await axios.post("/login", { email, password });
+            console.log("Login Response:", res.data); // Debug: Log the response
             setMessage(res.data.message);
             if (res.status === 200) {
-                login({ email, username: res.data.username }, res.data.token);
+                const user = { email, username: res.data.username };
+                console.log("Logging in with user:", user, "token:", res.data.token); // Debug: Log user and token
+                login(user, res.data.token);
                 setTimeout(() => navigate("/dashboard"), 2000);
             }
         } catch (err) {
+            console.error("Login Error:", err); // Debug: Log any errors
             setMessage(err.response?.data?.message || "Error logging in");
         }
     };
