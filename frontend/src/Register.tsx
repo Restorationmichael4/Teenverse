@@ -11,21 +11,19 @@ export default function Register() {
 
     const handleRegister = async () => {
         try {
-            // Validate inputs
             if (!email || !password || !dob) {
                 setMessage("Please fill in all fields");
                 return;
             }
 
-            // Log the data being sent
-            console.log("Sending registration data:", { email, password, dob });
+            const formattedDob = new Date(dob).toISOString().split("T")[0];
+            console.log("Sending registration data:", { email, password, dob: formattedDob });
 
-            const res = await axios.post("/register", { email, password, dob });
+            const res = await axios.post("/register", { email, password, dob: formattedDob });
             setMessage(res.data.message);
             if (res.status === 200) {
-                // Store user in localStorage
                 localStorage.setItem("user", JSON.stringify({ email }));
-                setTimeout(() => navigate("/"), 2000); // Redirect to login after 2 seconds
+                setTimeout(() => navigate("/"), 2000);
             }
         } catch (err) {
             console.error("Registration error:", err);
@@ -44,30 +42,40 @@ export default function Register() {
     };
 
     return (
-        <div>
-            <h2>Register</h2>
-            <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-            />
-            <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-            />
-            <input
-                type="date"
-                value={dob}
-                onChange={(e) => setDob(e.target.value)}
-            />
-            <button onClick={handleRegister}>Sign Up</button>
-            <p>{message}</p>
-            <p>
-                Already have an account? <a href="/">Log in</a>
-            </p>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-purple-500 to-indigo-600">
+            <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+                <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">Register for TeenVerse</h2>
+                <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <input
+                    type="date"
+                    value={dob}
+                    onChange={(e) => setDob(e.target.value)}
+                    className="w-full p-3 mb-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+                <button
+                    onClick={handleRegister}
+                    className="w-full bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 transition"
+                >
+                    Sign Up
+                </button>
+                <p className="text-center text-gray-600 mt-4">{message}</p>
+                <p className="text-center text-gray-600 mt-2">
+                    Already have an account? <a href="/" className="text-indigo-600 hover:underline">Log in</a>
+                </p>
+            </div>
         </div>
     );
-                              }
+        }
