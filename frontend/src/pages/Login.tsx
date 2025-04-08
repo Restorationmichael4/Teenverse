@@ -12,7 +12,7 @@ export default function Login() {
 
     const handleLogin = async () => {
         try {
-            const res = await axios.post("/login", { email, password });
+            const res = await axios.post("https://teenverse.onrender.com/api/login", { email, password });
             console.log("Login Response:", res.data); // Debug: Log the response
             setMessage(res.data.message);
             if (res.status === 200) {
@@ -58,4 +58,4 @@ export default function Login() {
             </div>
         </div>
     );
-}
+                }
