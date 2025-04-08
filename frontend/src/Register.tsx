@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function Register() {
     const [email, setEmail] = useState("");
-    const [username, setUsername] = useState(""); // Add username state
+    const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const [dob, setDob] = useState("");
     const [message, setMessage] = useState("");
@@ -20,7 +20,7 @@ export default function Register() {
             const formattedDob = new Date(dob).toISOString().split("T")[0];
             console.log("Sending registration data:", { email, username, password, dob: formattedDob });
 
-            const res = await axios.post("/register", { email, username, password, dob: formattedDob });
+            const res = await axios.post("https://teenverse.onrender.com/api/register", { email, username, password, dob: formattedDob });
             setMessage(res.data.message);
             if (res.status === 200) {
                 localStorage.setItem("user", JSON.stringify({ email, username }));
@@ -86,4 +86,4 @@ export default function Register() {
             </div>
         </div>
     );
-                    }
+                           }
