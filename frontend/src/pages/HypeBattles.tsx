@@ -69,7 +69,12 @@ export default function HypeBattles() {
 
     if (!user || !token) {
         return <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="text-center text-red-500 text-xl">Please log in to access HYPE Battles.</div>
+            <div className="text-center text-red-500 text-xl">
+                Please log in to access HYPE Battles.
+                <div className="mt-4 text-gray-800">
+                    Debug: user={JSON.stringify(user)}, token={token ? "Present" : "Missing"}
+                </div>
+            </div>
         </div>;
     }
 
