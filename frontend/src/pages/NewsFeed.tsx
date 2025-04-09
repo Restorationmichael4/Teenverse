@@ -76,7 +76,7 @@ export default function NewsFeed() {
             return;
         }
         try {
-            await axios.post("/like", {
+            await axios.post("/api/like", {
                 postId,
                 email: user.email
             }, {
