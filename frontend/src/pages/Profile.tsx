@@ -52,7 +52,7 @@ export default function Profile() {
 
                 // Fetch coins
                 try {
-                    const coinsRes = await axios.post("/get-coins", { email: user.email }, {
+                    const coinsRes = await axios.post("/api/get-coins", { email: user.email }, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     setCoins(coinsRes.data.coins || 0);
