@@ -29,7 +29,7 @@ export default function Dashboard() {
         const fetchPosts = async () => {
             if (!user || !token) return;
             try {
-                const res = await axios.get("/posts", {
+                const res = await axios.get("/api/posts", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setPosts(res.data);
@@ -72,7 +72,7 @@ export default function Dashboard() {
             return;
         }
         try {
-            const res = await axios.post("/create-post", {
+            const res = await axios.post("/api/create-post", {
                 email: user.email,
                 content,
                 mode: "main"
@@ -81,7 +81,7 @@ export default function Dashboard() {
             });
             setMessage(res.data.message);
             setContent("");
-            const postsRes = await axios.get("/posts", {
+            const postsRes = await axios.get("/api/posts", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setPosts(postsRes.data);
