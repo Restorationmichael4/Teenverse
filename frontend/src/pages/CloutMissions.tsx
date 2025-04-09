@@ -13,7 +13,7 @@ export default function CloutMissions() {
         const fetchMission = async () => {
             if (!user || !token) return;
             try {
-                const res = await axios.get("/clout-missions", {
+                const res = await axios.get("/api/clout-missions", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setMission(res.data.mission);
