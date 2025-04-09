@@ -52,7 +52,7 @@ export default function NewsFeed() {
             return;
         }
         try {
-            const res = await axios.post("/create-post", {
+            const res = await axios.post("/api/create-post", {
                 email: user.email,
                 content,
                 mode
@@ -61,7 +61,7 @@ export default function NewsFeed() {
             });
             setMessage(res.data.message);
             setContent("");
-            const postsRes = await axios.get("/posts", {
+            const postsRes = await axios.get("/api/posts", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setPosts(postsRes.data);
