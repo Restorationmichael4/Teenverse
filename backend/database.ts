@@ -32,6 +32,7 @@ db.run(`CREATE TABLE IF NOT EXISTS posts (
     likes INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     mode TEXT,
+    post_mode TEXT, -- Added to store the user's mode at the time of posting
     FOREIGN KEY(user_id) REFERENCES users(id)
 )`, (err) => {
     if (err) console.error("Error creating posts table:", err);
@@ -81,6 +82,7 @@ db.run(`CREATE TABLE IF NOT EXISTS hype_battles (
     votes INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     closed INTEGER DEFAULT 0,
+    post_mode TEXT, -- Added to store the user's mode at the time of posting
     FOREIGN KEY(user_id) REFERENCES users(id)
 )`, (err) => {
     if (err) console.error("Error creating hype battles table:", err);
@@ -124,6 +126,7 @@ db.run(`CREATE TABLE IF NOT EXISTS game_squads (
     uid TEXT,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    post_mode TEXT, -- Added to store the user's mode at the time of posting
     FOREIGN KEY(user_id) REFERENCES users(id)
 )`, (err) => {
     if (err) console.error("Error creating game squads table:", err);
