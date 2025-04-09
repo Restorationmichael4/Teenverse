@@ -40,10 +40,41 @@ const authenticateToken = (req: express.Request, res: express.Response, next: ex
 // Serve static files
 app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
-// Use post routes
-app.use('/api/posts', postRoutes);
+// Use post routes with authentication middleware
+app.use('/api/posts', authenticateToken, postRoutes);
 
-// Register endpoint (moved to /api/register)
+// Endpoint to fetch rants
+app.get("/api/rants", authenticateToken, async (req: express.Request, res: express.Response) => {
+    try {
+        const rants: any[] = await new Promise<any[]>((resolve, reject) => {
+            db.all(
+                "SELECT p.*, u.mode as user_mode, u.username as actual_username FROM posts p JOIN users u ON p.user_id = u.id WHERE p.mode = 'rant' ORDER BY p.created_at DESC",
+                [],
+                (err, rows) => {
+                    if (err) reject(err);
+                    resolve(rows);
+                }
+            );
+        });
+
+        // Modify rants to hide username in undercover mode
+        const modifiedRants = rants.map((rant) => {
+            console.log(`Rant ID ${rant.id}: user_mode=${rant.user_mode}, actual_username=${rant.actual_username}`); // Debug
+            if (rant.user_mode === "undercover") {
+                return { ...rant, username: "Anonymous" };
+            }
+            return rant;
+        });
+
+        console.log(`[${new Date().toISOString()}] /api/rants returned ${modifiedRants.length} rants`);
+        res.json(modifiedRants);
+    } catch (err) {
+        console.error(`[${new Date().toISOString()}] Get rants error:`, err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+// Register endpoint
 app.post("/api/register", async (req, res) => {
     try {
         const { email, username, password, dob } = req.body;
@@ -103,7 +134,7 @@ app.post("/api/register", async (req, res) => {
     }
 });
 
-// Login endpoint (moved to /api/login)
+// Login endpoint
 app.post("/api/login", async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -182,7 +213,7 @@ app.post("/api/get-mode", authenticateToken, async (req, res) => {
     }
 });
 
-// Create post endpoint
+// Create post endpoint (used for rants as well)
 app.post("/api/create-post", authenticateToken, async (req, res) => {
     try {
         const { email, content, mode } = req.body;
@@ -199,8 +230,8 @@ app.post("/api/create-post", authenticateToken, async (req, res) => {
 
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        const postMode = mode || user.mode;
-        console.log(`[${new Date().toISOString()}] Creating post with mode: ${postMode}`);
+        const postMode = mode || user.mode; // Use the provided mode, or fall back to user's current mode
+        console.log(`[${new Date().toISOString()}] Creating post for user ${user.username}: mode=${postMode}, content=${content}`);
 
         await new Promise<void>((resolve, reject) => {
             db.run(
@@ -489,13 +520,27 @@ app.post("/api/like", authenticateToken, async (req, res) => {
 app.get("/api/game-squads", authenticateToken, async (req, res) => {
     try {
         const squads: any[] = await new Promise<any[]>((resolve, reject) => {
-            db.all("SELECT * FROM game_squads ORDER BY created_at DESC", [], (err, rows) => {
-                if (err) reject(err);
-                resolve(rows);
-            });
+            db.all(
+                "SELECT g.*, u.mode as user_mode, u.username as actual_username FROM game_squads g JOIN users u ON g.user_id = u.id ORDER BY g.created_at DESC",
+                [],
+                (err, rows) => {
+                    if (err) reject(err);
+                    resolve(rows);
+                }
+            );
         });
-        console.log(`[${new Date().toISOString()}] /api/game-squads returned ${squads.length} squads`);
-        res.json(squads);
+
+        // Modify squads to hide username in undercover mode
+        const modifiedSquads = squads.map((squad) => {
+            console.log(`Game Squad ID ${squad.id}: user_mode=${squad.user_mode}, actual_username=${squad.actual_username}`); // Debug
+            if (squad.user_mode === "undercover") {
+                return { ...squad, username: "Anonymous" };
+            }
+            return squad;
+        });
+
+        console.log(`[${new Date().toISOString()}] /api/game-squads returned ${modifiedSquads.length} squads`);
+        res.json(modifiedSquads);
     } catch (err) {
         console.error(`[${new Date().toISOString()}] Get game squads error:`, err);
         res.status(500).json({ message: "Internal server error" });
@@ -540,13 +585,27 @@ app.post("/api/game-squads", authenticateToken, async (req, res) => {
 app.get("/api/hype-battles", authenticateToken, async (req, res) => {
     try {
         const battles: any[] = await new Promise<any[]>((resolve, reject) => {
-            db.all("SELECT * FROM hype_battles WHERE closed = 0 ORDER BY created_at DESC", [], (err, rows) => {
-                if (err) reject(err);
-                resolve(rows);
-            });
+            db.all(
+                "SELECT h.*, u.mode as user_mode, u.username as actual_username FROM hype_battles h JOIN users u ON h.user_id = u.id WHERE h.closed = 0 ORDER BY h.created_at DESC",
+                [],
+                (err, rows) => {
+                    if (err) reject(err);
+                    resolve(rows);
+                }
+            );
         });
-        console.log(`[${new Date().toISOString()}] /api/hype-battles returned ${battles.length} battles`);
-        res.json(battles);
+
+        // Modify battles to hide username in undercover mode
+        const modifiedBattles = battles.map((battle) => {
+            console.log(`Hype Battle ID ${battle.id}: user_mode=${battle.user_mode}, actual_username=${battle.actual_username}`); // Debug
+            if (battle.user_mode === "undercover") {
+                return { ...battle, username: "Anonymous" };
+            }
+            return battle;
+        });
+
+        console.log(`[${new Date().toISOString()}] /api/hype-battles returned ${modifiedBattles.length} battles`);
+        res.json(modifiedBattles);
     } catch (err) {
         console.error(`[${new Date().toISOString()}] Get hype battles error:`, err);
         res.status(500).json({ message: "Internal server error" });
@@ -826,7 +885,7 @@ app.get("/api/hall-of-fame", authenticateToken, async (req, res) => {
     try {
         const rankings: any[] = await new Promise<any[]>((resolve, reject) => {
             db.all(
-                "SELECT u.username, h.total_likes FROM hall_of_fame h JOIN users u ON h.user_id = u.id ORDER BY h.total_likes DESC",
+                "SELECT h.*, u.mode as user_mode, u.username as actual_username FROM hall_of_fame h JOIN users u ON h.user_id = u.id ORDER BY h.total_likes DESC",
                 [],
                 (err, rows) => {
                     if (err) reject(err);
@@ -834,8 +893,18 @@ app.get("/api/hall-of-fame", authenticateToken, async (req, res) => {
                 }
             );
         });
-        console.log(`[${new Date().toISOString()}] /api/hall-of-fame returned ${rankings.length} rankings`);
-        res.json(rankings);
+
+        // Modify rankings to hide username in undercover mode
+        const modifiedRankings = rankings.map((ranking) => {
+            console.log(`Hall of Fame User ID ${ranking.user_id}: user_mode=${ranking.user_mode}, actual_username=${ranking.actual_username}`); // Debug
+            if (ranking.user_mode === "undercover") {
+                return { ...ranking, username: "Anonymous" };
+            }
+            return ranking;
+        });
+
+        console.log(`[${new Date().toISOString()}] /api/hall-of-fame returned ${modifiedRankings.length} rankings`);
+        res.json(modifiedRankings);
     } catch (err) {
         console.error(`[${new Date().toISOString()}] Hall of fame error:`, err);
         res.status(500).json({ message: "Internal server error" });
