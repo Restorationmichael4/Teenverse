@@ -26,9 +26,10 @@ export default function GameSquad() {
         const fetchSquads = async () => {
             if (!user || !token) return;
             try {
-                const res = await axios.get("/api/game-squads", {
+                const res = await axios.get("https://teenverse.onrender.com/api/game-squads", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
+                console.log("Fetched squads:", res.data); // Debug
                 setSquads(res.data);
             } catch (err) {
                 setMessage("Error fetching squads: " + (err.response?.data?.message || err.message));
@@ -58,7 +59,8 @@ export default function GameSquad() {
             return;
         }
         try {
-            const res = await axios.post("/game-squads", {
+            console.log("Creating squad at URL:", "https://teenverse.onrender.com/api/game-squads"); // Debug
+            const res = await axios.post("https://teenverse.onrender.com/api/game-squads", {
                 email: user.email,
                 gameName,
                 uid,
@@ -70,7 +72,7 @@ export default function GameSquad() {
             setGameName("");
             setUid("");
             setDescription("");
-            const squadsRes = await axios.get("/game-squads", {
+            const squadsRes = await axios.get("https://teenverse.onrender.com/api/game-squads", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setSquads(squadsRes.data);
@@ -151,4 +153,4 @@ export default function GameSquad() {
             </div>
         </div>
     );
-                                    }
+                }
