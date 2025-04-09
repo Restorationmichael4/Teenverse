@@ -23,7 +23,7 @@ export default function RantZone() {
         const fetchRants = async () => {
             if (!user || !token) return;
             try {
-                const res = await axios.get("/posts", {
+                const res = await axios.get("/api/posts", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 // Ensure res.data is an array before filtering
@@ -54,7 +54,7 @@ export default function RantZone() {
             return;
         }
         try {
-            const res = await axios.post("/create-post", {
+            const res = await axios.post("/api/create-post", {
                 email: user.email,
                 content: rantContent,
                 mode: "rant"
@@ -63,7 +63,7 @@ export default function RantZone() {
             });
             setMessage(res.data.message);
             setRantContent("");
-            const postsRes = await axios.get("/posts", {
+            const postsRes = await axios.get("/api/posts", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Ensure postsRes.data is an array before filtering
@@ -81,7 +81,7 @@ export default function RantZone() {
             return;
         }
         try {
-            await axios.post("/like", {
+            await axios.post("/api/like", {
                 postId,
                 email: user.email
             }, {
