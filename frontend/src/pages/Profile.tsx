@@ -20,7 +20,7 @@ export default function Profile() {
             try {
                 // Fetch user stats
                 try {
-                    const statsRes = await axios.post("/get-user-stats", { email: user.email }, {
+                    const statsRes = await axios.post("/api/get-user-stats", { email: user.email }, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     setXP(statsRes.data.xp || 0);
@@ -32,7 +32,7 @@ export default function Profile() {
 
                 // Fetch snitch status
                 try {
-                    const snitchRes = await axios.post("/get-snitch-status", { email: user.email }, {
+                    const snitchRes = await axios.post("/api/get-snitch-status", { email: user.email }, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     setSnitchStatus(snitchRes.data.snitchStatus || "clean");
@@ -42,7 +42,7 @@ export default function Profile() {
 
                 // Fetch mode
                 try {
-                    const modeRes = await axios.post("/get-mode", { email: user.email }, {
+                    const modeRes = await axios.post("/api/get-mode", { email: user.email }, {
                         headers: { Authorization: `Bearer ${token}` }
                     });
                     setMode(modeRes.data.mode || "main");
@@ -83,7 +83,7 @@ export default function Profile() {
             return;
         }
         try {
-            const res = await axios.post("/toggle-mode", { email: user.email }, {
+            const res = await axios.post("/api/toggle-mode", { email: user.email }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setMode(res.data.message.includes("main") ? "main" : "undercover");
