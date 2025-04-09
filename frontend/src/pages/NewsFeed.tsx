@@ -15,7 +15,6 @@ interface Post {
 export default function NewsFeed() {
     const [posts, setPosts] = useState<Post[]>([]);
     const [content, setContent] = useState("");
-    const [mode, setMode] = useState("main");
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(true);
     const { user, token } = useAuth();
@@ -24,7 +23,7 @@ export default function NewsFeed() {
         const fetchPosts = async () => {
             if (!user || !token) return;
             try {
-                const res = await axios.get("/api/posts", {
+                const res = await axios.get("/api/posts/newsfeed", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setPosts(res.data);
@@ -55,13 +54,13 @@ export default function NewsFeed() {
             const res = await axios.post("/api/create-post", {
                 email: user.email,
                 content,
-                mode
+                mode: "main"
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setMessage(res.data.message);
             setContent("");
-            const postsRes = await axios.get("/api/posts", {
+            const postsRes = await axios.get("/api/posts/newsfeed", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setPosts(postsRes.data);
@@ -82,7 +81,7 @@ export default function NewsFeed() {
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            const postsRes = await axios.get("/posts", {
+            const postsRes = await axios.get("/api/posts/newsfeed", {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setPosts(postsRes.data);
@@ -92,20 +91,19 @@ export default function NewsFeed() {
     };
 
     if (!user || !token) {
-        return <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="text-center text-red-500 text-xl">
-                Please log in to access the News Feed.
-                <div className="mt-4 text-gray-800">
-                    Debug: user={JSON.stringify(user)}, token={token ? "Present" : "Missing"}
-                </div>
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="text-center text-red-500 text-xl">Please log in to access the News Feed.</div>
             </div>
-        </div>;
+        );
     }
 
     if (loading) {
-        return <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="text-center text-gray-800 text-xl">Loading...</div>
-        </div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="text-center text-gray-800 text-xl">Loading...</div>
+            </div>
+        );
     }
 
     return (
@@ -124,14 +122,6 @@ export default function NewsFeed() {
                             placeholder="What's on your mind?"
                             className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4"
                         />
-                        <select
-                            value={mode}
-                            onChange={(e) => setMode(e.target.value)}
-                            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4"
-                        >
-                            <option value="main">Main Mode</option>
-                            <option value="undercover">Undercover Mode</option>
-                        </select>
                         <button
                             onClick={postUpdate}
                             className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
@@ -164,4 +154,4 @@ export default function NewsFeed() {
             </div>
         </div>
     );
-              }
+            }
