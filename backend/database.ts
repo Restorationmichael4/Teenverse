@@ -4,7 +4,7 @@ export const db = new sqlite3.Database("users.db", (err) => {
     if (err) console.error("Database connection error:", err);
 });
 
-// Users table
+// Users table (removed mode column)
 db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     email TEXT UNIQUE,
@@ -12,7 +12,6 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
     password TEXT,
     dob TEXT,
     verified INTEGER,
-    mode TEXT DEFAULT 'main',
     coins INTEGER DEFAULT 0,
     xp INTEGER DEFAULT 0,
     level INTEGER DEFAULT 1,
@@ -23,7 +22,7 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
     if (err) console.error("Error creating users table:", err);
 });
 
-// Posts table
+// Posts table (removed post_mode column)
 db.run(`CREATE TABLE IF NOT EXISTS posts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -32,7 +31,6 @@ db.run(`CREATE TABLE IF NOT EXISTS posts (
     likes INTEGER DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     mode TEXT,
-    post_mode TEXT, -- Added to store the user's mode at the time of posting
     FOREIGN KEY(user_id) REFERENCES users(id)
 )`, (err) => {
     if (err) console.error("Error creating posts table:", err);
@@ -73,7 +71,7 @@ db.run(`CREATE TABLE IF NOT EXISTS coin_flip_history (
     if (err) console.error("Error creating coin flip history table:", err);
 });
 
-// Hype battles table
+// Hype battles table (removed post_mode column)
 db.run(`CREATE TABLE IF NOT EXISTS hype_battles (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -82,7 +80,6 @@ db.run(`CREATE TABLE IF NOT EXISTS hype_battles (
     votes INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     closed INTEGER DEFAULT 0,
-    post_mode TEXT, -- Added to store the user's mode at the time of posting
     FOREIGN KEY(user_id) REFERENCES users(id)
 )`, (err) => {
     if (err) console.error("Error creating hype battles table:", err);
@@ -117,7 +114,7 @@ db.run(`CREATE TABLE IF NOT EXISTS scheduled_battles (
     if (err) console.error("Error creating scheduled battles table:", err);
 });
 
-// Game squads table
+// Game squads table (removed post_mode column)
 db.run(`CREATE TABLE IF NOT EXISTS game_squads (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -126,7 +123,6 @@ db.run(`CREATE TABLE IF NOT EXISTS game_squads (
     uid TEXT,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    post_mode TEXT, -- Added to store the user's mode at the time of posting
     FOREIGN KEY(user_id) REFERENCES users(id)
 )`, (err) => {
     if (err) console.error("Error creating game squads table:", err);
