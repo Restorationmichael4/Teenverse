@@ -24,7 +24,7 @@ export default function NewsFeed() {
         const fetchPosts = async () => {
             if (!user || !token) return;
             try {
-                const res = await axios.get("/posts", {
+                const res = await axios.get("/api/posts", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setPosts(res.data);
