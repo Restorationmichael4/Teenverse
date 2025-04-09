@@ -26,7 +26,7 @@ export default function GameSquad() {
         const fetchSquads = async () => {
             if (!user || !token) return;
             try {
-                const res = await axios.get("/game-squads", {
+                const res = await axios.get("/api/game-squads", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setSquads(res.data);
