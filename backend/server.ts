@@ -154,62 +154,6 @@ app.post("/api/login", async (req, res) => {
     }
 });
 
-// Toggle mode endpoint
-app.post("/api/toggle-mode", authenticateToken, async (req, res) => {
-    try {
-        const { email } = req.body;
-        if (req.user.email !== email) {
-            return res.status(403).json({ message: "Unauthorized" });
-        }
-
-        const user: any = await new Promise<any>((resolve, reject) => {
-            db.get("SELECT mode FROM users WHERE email = ?", [email], (err, row) => {
-                if (err) reject(err);
-                resolve(row);
-            });
-        });
-
-        if (!user) return res.status(404).json({ message: "User not found" });
-
-        const newMode = user.mode === "main" ? "undercover" : "main";
-        await new Promise<void>((resolve, reject) => {
-            db.run("UPDATE users SET mode = ? WHERE email = ?", [newMode, email], (err) => {
-                if (err) reject(err);
-                resolve();
-            });
-        });
-
-        res.json({ message: `Switched to ${newMode}` });
-    } catch (err) {
-        console.error("Toggle mode error:", err);
-        res.status(500).json({ message: "Error updating mode" });
-    }
-});
-
-// Get mode endpoint
-app.post("/api/get-mode", authenticateToken, async (req, res) => {
-    try {
-        const { email } = req.body;
-        if (req.user.email !== email) {
-            return res.status(403).json({ message: "Unauthorized" });
-        }
-
-        const user: any = await new Promise<any>((resolve, reject) => {
-            db.get("SELECT mode FROM users WHERE email = ?", [email], (err, row) => {
-                if (err) reject(err);
-                resolve(row);
-            });
-        });
-
-        if (!user) return res.status(404).json({ message: "User not found" });
-
-        res.json({ mode: user.mode });
-    } catch (err) {
-        console.error("Get mode error:", err);
-        res.status(500).json({ message: "Internal server error" });
-    }
-});
-
 // Create post endpoint (used for rants as well)
 app.post("/api/create-post", authenticateToken, async (req, res) => {
     try {
@@ -219,7 +163,7 @@ app.post("/api/create-post", authenticateToken, async (req, res) => {
         }
 
         const user: any = await new Promise<any>((resolve, reject) => {
-            db.get("SELECT id, username, mode, xp, coins FROM users WHERE email = ?", [email], (err, row) => {
+            db.get("SELECT id, username, xp, coins FROM users WHERE email = ?", [email], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
             });
@@ -228,13 +172,12 @@ app.post("/api/create-post", authenticateToken, async (req, res) => {
         if (!user) return res.status(404).json({ message: "User not found" });
 
         const postMode = mode || "main"; // Use the provided mode (e.g., "rant"), default to "main"
-        const userModeAtPost = user.mode; // Store the user's mode at the time of posting
-        console.log(`[${new Date().toISOString()}] Creating post for user ${user.username}: mode=${postMode}, user_mode=${userModeAtPost}, content=${content}`);
+        console.log(`[${new Date().toISOString()}] Creating post for user ${user.username}: mode=${postMode}, content=${content}`);
 
         await new Promise<void>((resolve, reject) => {
             db.run(
-                "INSERT INTO posts (user_id, username, content, mode, post_mode) VALUES (?, ?, ?, ?, ?)",
-                [user.id, user.username, content, postMode, userModeAtPost],
+                "INSERT INTO posts (user_id, username, content, mode) VALUES (?, ?, ?, ?)",
+                [user.id, user.username, content, postMode],
                 (err) => {
                     if (err) reject(err);
                     resolve();
@@ -472,20 +415,11 @@ app.post("/api/like", authenticateToken, async (req, res) => {
         });
 
         const post: any = await new Promise<any>((resolve, reject) => {
-            db.get("SELECT likes, mode, post_mode FROM posts WHERE id = ?", [postId], (err, row) => {
+            db.get("SELECT likes, mode FROM posts WHERE id = ?", [postId], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
             });
         });
-
-        if (post.likes >= 50 && post.post_mode === "undercover" && post.mode !== "rant") {
-            await new Promise<void>((resolve, reject) => {
-                db.run("UPDATE posts SET created_at = NULL WHERE id = ?", [postId], (err) => {
-                    if (err) reject(err);
-                    resolve();
-                });
-            });
-        }
 
         const totalLikes: any = await new Promise<any>((resolve, reject) => {
             db.get("SELECT SUM(likes) as total FROM posts WHERE user_id = ?", [userId], (err, row) => {
@@ -519,7 +453,7 @@ app.get("/api/game-squads", authenticateToken, async (req, res) => {
     try {
         const squads: any[] = await new Promise<any[]>((resolve, reject) => {
             db.all(
-                "SELECT g.*, g.post_mode, u.username as actual_username FROM game_squads g JOIN users u ON g.user_id = u.id ORDER BY g.created_at DESC",
+                "SELECT g.*, u.username as actual_username FROM game_squads g JOIN users u ON g.user_id = u.id ORDER BY g.created_at DESC",
                 [],
                 (err, rows) => {
                     if (err) reject(err);
@@ -528,17 +462,8 @@ app.get("/api/game-squads", authenticateToken, async (req, res) => {
             );
         });
 
-        // Use post_mode to determine username display
-        const modifiedSquads = squads.map((squad) => {
-            console.log(`Game Squad ID ${squad.id}: post_mode=${squad.post_mode}, actual_username=${squad.actual_username}`); // Debug
-            if (squad.post_mode === "undercover") {
-                return { ...squad, username: "Anonymous" };
-            }
-            return squad;
-        });
-
-        console.log(`[${new Date().toISOString()}] /api/game-squads returned ${modifiedSquads.length} squads`);
-        res.json(modifiedSquads);
+        console.log(`[${new Date().toISOString()}] /api/game-squads returned ${squads.length} squads`);
+        res.json(squads);
     } catch (err) {
         console.error(`[${new Date().toISOString()}] Get game squads error:`, err);
         res.status(500).json({ message: "Internal server error" });
@@ -553,7 +478,7 @@ app.post("/api/game-squads", authenticateToken, async (req, res) => {
         }
 
         const user: any = await new Promise<any>((resolve, reject) => {
-            db.get("SELECT id, username, mode FROM users WHERE email = ?", [email], (err, row) => {
+            db.get("SELECT id, username FROM users WHERE email = ?", [email], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
             });
@@ -561,12 +486,10 @@ app.post("/api/game-squads", authenticateToken, async (req, res) => {
 
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        const userModeAtPost = user.mode; // Store the user's mode at the time of posting
-
         await new Promise<void>((resolve, reject) => {
             db.run(
-                "INSERT INTO game_squads (user_id, username, game_name, uid, description, post_mode) VALUES (?, ?, ?, ?, ?, ?)",
-                [user.id, user.username, gameName, uid, description, userModeAtPost],
+                "INSERT INTO game_squads (user_id, username, game_name, uid, description) VALUES (?, ?, ?, ?, ?)",
+                [user.id, user.username, gameName, uid, description],
                 (err) => {
                     if (err) reject(err);
                     resolve();
@@ -586,7 +509,7 @@ app.get("/api/hype-battles", authenticateToken, async (req, res) => {
     try {
         const battles: any[] = await new Promise<any[]>((resolve, reject) => {
             db.all(
-                "SELECT h.*, h.post_mode, u.username as actual_username FROM hype_battles h JOIN users u ON h.user_id = u.id WHERE h.closed = 0 ORDER BY h.created_at DESC",
+                "SELECT h.*, u.username as actual_username FROM hype_battles h JOIN users u ON h.user_id = u.id WHERE h.closed = 0 ORDER BY h.created_at DESC",
                 [],
                 (err, rows) => {
                     if (err) reject(err);
@@ -595,17 +518,8 @@ app.get("/api/hype-battles", authenticateToken, async (req, res) => {
             );
         });
 
-        // Use post_mode to determine username display
-        const modifiedBattles = battles.map((battle) => {
-            console.log(`Hype Battle ID ${battle.id}: post_mode=${battle.post_mode}, actual_username=${battle.actual_username}`); // Debug
-            if (battle.post_mode === "undercover") {
-                return { ...battle, username: "Anonymous" };
-            }
-            return battle;
-        });
-
-        console.log(`[${new Date().toISOString()}] /api/hype-battles returned ${modifiedBattles.length} battles`);
-        res.json(modifiedBattles);
+        console.log(`[${new Date().toISOString()}] /api/hype-battles returned ${battles.length} battles`);
+        res.json(battles);
     } catch (err) {
         console.error(`[${new Date().toISOString()}] Get hype battles error:`, err);
         res.status(500).json({ message: "Internal server error" });
@@ -620,7 +534,7 @@ app.post("/api/hype-battle", authenticateToken, async (req, res) => {
         }
 
         const user: any = await new Promise<any>((resolve, reject) => {
-            db.get("SELECT id, username, mode FROM users WHERE email = ?", [email], (err, row) => {
+            db.get("SELECT id, username FROM users WHERE email = ?", [email], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
             });
@@ -628,12 +542,10 @@ app.post("/api/hype-battle", authenticateToken, async (req, res) => {
 
         if (!user) return res.status(404).json({ message: "User not found" });
 
-        const userModeAtPost = user.mode; // Store the user's mode at the time of posting
-
         await new Promise<void>((resolve, reject) => {
             db.run(
-                "INSERT INTO hype_battles (user_id, username, content, votes, post_mode) VALUES (?, ?, ?, ?, ?)",
-                [user.id, user.username, content, 0, userModeAtPost],
+                "INSERT INTO hype_battles (user_id, username, content, votes) VALUES (?, ?, ?, ?)",
+                [user.id, user.username, content, 0],
                 (err) => {
                     if (err) reject(err);
                     resolve();
@@ -887,7 +799,7 @@ app.get("/api/hall-of-fame", authenticateToken, async (req, res) => {
     try {
         const rankings: any[] = await new Promise<any[]>((resolve, reject) => {
             db.all(
-                "SELECT h.*, u.mode as user_mode, u.username as actual_username FROM hall_of_fame h JOIN users u ON h.user_id = u.id ORDER BY h.total_likes DESC",
+                "SELECT h.*, u.username as actual_username FROM hall_of_fame h JOIN users u ON h.user_id = u.id ORDER BY h.total_likes DESC",
                 [],
                 (err, rows) => {
                     if (err) reject(err);
@@ -896,17 +808,8 @@ app.get("/api/hall-of-fame", authenticateToken, async (req, res) => {
             );
         });
 
-        // Use user_mode for Hall of Fame (since it's a user-level achievement, not a post)
-        const modifiedRankings = rankings.map((ranking) => {
-            console.log(`Hall of Fame User ID ${ranking.user_id}: user_mode=${ranking.user_mode}, actual_username=${ranking.actual_username}`); // Debug
-            if (ranking.user_mode === "undercover") {
-                return { ...ranking, username: "Anonymous" };
-            }
-            return ranking;
-        });
-
-        console.log(`[${new Date().toISOString()}] /api/hall-of-fame returned ${modifiedRankings.length} rankings`);
-        res.json(modifiedRankings);
+        console.log(`[${new Date().toISOString()}] /api/hall-of-fame returned ${rankings.length} rankings`);
+        res.json(rankings);
     } catch (err) {
         console.error(`[${new Date().toISOString()}] Hall of fame error:`, err);
         res.status(500).json({ message: "Internal server error" });
@@ -996,4 +899,4 @@ declare global {
             user?: { email: string, verified: number };
         }
     }
-                                                                                                }
+                   }
