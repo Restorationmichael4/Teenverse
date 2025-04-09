@@ -11,18 +11,11 @@ interface Post {
     created_at: string;
 }
 
-interface DebugLog {
-    timestamp: string;
-    user: string;
-    token: string;
-}
-
 export default function Dashboard() {
     const [content, setContent] = useState("");
     const [message, setMessage] = useState("");
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(true);
-    const [debugLogs, setDebugLogs] = useState<DebugLog[]>([]);
     const { user, token } = useAuth();
 
     useEffect(() => {
@@ -51,21 +44,6 @@ export default function Dashboard() {
         }
     }, [user, token]);
 
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setDebugLogs((prev) => [
-                ...prev,
-                {
-                    timestamp: new Date().toLocaleTimeString(),
-                    user: JSON.stringify(user),
-                    token: token ? "Present" : "Missing"
-                }
-            ]);
-        }, 1000);
-
-        return () => clearInterval(interval);
-    }, [user, token]);
-
     const handlePost = async () => {
         if (!user || !token) {
             setMessage("Please log in to post.");
@@ -91,15 +69,19 @@ export default function Dashboard() {
     };
 
     if (!user || !token) {
-        return <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="text-center text-red-500 text-xl">Please log in to access the dashboard.</div>
-        </div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="text-center text-red-500 text-xl">Please log in to access the dashboard.</div>
+            </div>
+        );
     }
 
     if (loading) {
-        return <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="text-center text-gray-800 text-xl">Loading...</div>
-        </div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="text-center text-gray-800 text-xl">Loading...</div>
+            </div>
+        );
     }
 
     return (
@@ -108,19 +90,6 @@ export default function Dashboard() {
             <div className="min-h-screen bg-gray-100 p-6">
                 <div className="max-w-4xl mx-auto">
                     <h1 className="text-3xl font-bold text-gray-800 mb-6">Welcome to TeenVerse, {user.username || user.email}!</h1>
-                    <div className="bg-yellow-100 p-4 rounded-lg mb-6">
-                        <h2 className="text-lg font-semibold text-yellow-800">Debug Info</h2>
-                        <p className="text-yellow-800">User: {JSON.stringify(user)}</p>
-                        <p className="text-yellow-800">Token: {token ? "Present" : "Missing"}</p>
-                        <h3 className="text-md font-semibold text-yellow-800 mt-4">Debug Log History</h3>
-                        <ul className="text-yellow-800">
-                            {debugLogs.map((log, index) => (
-                                <li key={index}>
-                                    {log.timestamp}: User: {log.user}, Token: {log.token}
-                                </li>
-                            ))}
-                        </ul>
-                    </div>
                     <p className="text-center text-green-600 mb-6">{message}</p>
 
                     <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
@@ -157,4 +126,4 @@ export default function Dashboard() {
             </div>
         </div>
     );
-                }
+        }
