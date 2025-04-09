@@ -14,7 +14,7 @@ export default function CreatePost() {
             return;
         }
         try {
-            const res = await axios.post("/create-post", {
+            const res = await axios.post("/api/create-post", {
                 email: user.email,
                 content,
                 mode: "main"
