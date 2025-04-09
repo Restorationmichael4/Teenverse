@@ -18,7 +18,7 @@ export default function HallOfFame() {
         const fetchRankings = async () => {
             if (!user || !token) return;
             try {
-                const res = await axios.get("/hall-of-fame", {
+                const res = await axios.get("/api/hall-of-fame", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setRankings(res.data);
