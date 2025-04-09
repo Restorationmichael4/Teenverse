@@ -9,7 +9,6 @@ export default function Profile() {
     const [rank, setRank] = useState("Newbie");
     const [snitchStatus, setSnitchStatus] = useState("clean");
     const [coins, setCoins] = useState(0);
-    const [mode, setMode] = useState("main");
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(true);
     const { user, token } = useAuth();
@@ -40,16 +39,6 @@ export default function Profile() {
                     setMessage((prev) => prev + " Error fetching snitch status: " + (err.response?.data?.message || err.message));
                 }
 
-                // Fetch mode
-                try {
-                    const modeRes = await axios.post("/api/get-mode", { email: user.email }, {
-                        headers: { Authorization: `Bearer ${token}` }
-                    });
-                    setMode(modeRes.data.mode || "main");
-                } catch (err) {
-                    setMessage((prev) => prev + " Error fetching mode: " + (err.response?.data?.message || err.message));
-                }
-
                 // Fetch coins
                 try {
                     const coinsRes = await axios.post("/api/get-coins", { email: user.email }, {
@@ -77,37 +66,20 @@ export default function Profile() {
         }
     }, [user, token]);
 
-    const handleToggleMode = async () => {
-        if (!user || !token) {
-            setMessage("Please log in to toggle mode.");
-            return;
-        }
-        try {
-            const res = await axios.post("/api/toggle-mode", { email: user.email }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setMode(res.data.message.includes("main") ? "main" : "undercover");
-            setMessage(res.data.message);
-        } catch (err) {
-            setMessage("Error toggling mode: " + (err.response?.data?.message || err.message));
-        }
-    };
-
     if (!user || !token) {
-        return <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="text-center text-red-500 text-xl">
-                Please log in to access your profile.
-                <div className="mt-4 text-gray-800">
-                    Debug: user={JSON.stringify(user)}, token={token ? "Present" : "Missing"}
-                </div>
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="text-center text-red-500 text-xl">Please log in to access your profile.</div>
             </div>
-        </div>;
+        );
     }
 
     if (loading) {
-        return <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="text-center text-gray-800 text-xl">Loading...</div>
-        </div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="text-center text-gray-800 text-xl">Loading...</div>
+            </div>
+        );
     }
 
     return (
@@ -136,19 +108,8 @@ export default function Profile() {
                             <p className="text-green-500">✅ Verified</p>
                         )}
                     </div>
-
-                    <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
-                        <h2 className="text-xl font-semibold text-gray-800 mb-4">Profile Mode</h2>
-                        <p className="text-gray-600 mb-4">Current Mode: {mode}</p>
-                        <button
-                            onClick={handleToggleMode}
-                            className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
-                        >
-                            Toggle to {mode === "main" ? "Undercover" : "Main"}
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
     );
-        }
+                }
