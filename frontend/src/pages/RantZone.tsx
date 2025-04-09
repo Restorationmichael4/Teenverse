@@ -23,12 +23,12 @@ export default function RantZone() {
         const fetchRants = async () => {
             if (!user || !token) return;
             try {
-                const res = await axios.get("/api/posts", {
+                const res = await axios.get("https://teenverse.onrender.com/api/rants", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                // Ensure res.data is an array before filtering
-                const posts = Array.isArray(res.data) ? res.data : [];
-                const rantPosts = posts.filter((post: Post) => post.mode === "rant");
+                console.log("Fetched rants:", res.data); // Debug: Log the fetched rants
+                // Ensure res.data is an array
+                const rantPosts = Array.isArray(res.data) ? res.data : [];
                 setRants(rantPosts);
             } catch (err) {
                 setMessage("Error fetching rants: " + (err.response?.data?.message || err.message));
@@ -54,7 +54,7 @@ export default function RantZone() {
             return;
         }
         try {
-            const res = await axios.post("/api/create-post", {
+            const res = await axios.post("https://teenverse.onrender.com/api/create-post", {
                 email: user.email,
                 content: rantContent,
                 mode: "rant"
@@ -63,12 +63,11 @@ export default function RantZone() {
             });
             setMessage(res.data.message);
             setRantContent("");
-            const postsRes = await axios.get("/api/posts", {
+            const rantsRes = await axios.get("https://teenverse.onrender.com/api/rants", {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            // Ensure postsRes.data is an array before filtering
-            const posts = Array.isArray(postsRes.data) ? postsRes.data : [];
-            const rantPosts = posts.filter((post: Post) => post.mode === "rant");
+            // Ensure rantsRes.data is an array
+            const rantPosts = Array.isArray(rantsRes.data) ? rantsRes.data : [];
             setRants(rantPosts);
         } catch (err) {
             setMessage("Error posting rant: " + (err.response?.data?.message || err.message));
@@ -81,18 +80,17 @@ export default function RantZone() {
             return;
         }
         try {
-            await axios.post("/api/like", {
+            await axios.post("https://teenverse.onrender.com/api/like", {
                 postId,
                 email: user.email
             }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            const postsRes = await axios.get("/posts", {
+            const rantsRes = await axios.get("https://teenverse.onrender.com/api/rants", {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            // Ensure postsRes.data is an array before filtering
-            const posts = Array.isArray(postsRes.data) ? postsRes.data : [];
-            const rantPosts = posts.filter((post: Post) => post.mode === "rant");
+            // Ensure rantsRes.data is an array
+            const rantPosts = Array.isArray(rantsRes.data) ? rantsRes.data : [];
             setRants(rantPosts);
         } catch (err) {
             setMessage("Error liking rant: " + (err.response?.data?.message || err.message));
@@ -100,20 +98,24 @@ export default function RantZone() {
     };
 
     if (!user || !token) {
-        return <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="text-center text-red-500 text-xl">
-                Please log in to access the Rant Zone.
-                <div className="mt-4 text-gray-800">
-                    Debug: user={JSON.stringify(user)}, token={token ? "Present" : "Missing"}
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="text-center text-red-500 text-xl">
+                    Please log in to access the Rant Zone.
+                    <div className="mt-4 text-gray-800">
+                        Debug: user={JSON.stringify(user)}, token={token ? "Present" : "Missing"}
+                    </div>
                 </div>
             </div>
-        </div>;
+        );
     }
 
     if (loading) {
-        return <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="text-center text-gray-800 text-xl">Loading...</div>
-        </div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="text-center text-gray-800 text-xl">Loading...</div>
+            </div>
+        );
     }
 
     return (
@@ -148,7 +150,9 @@ export default function RantZone() {
                                 <div key={rant.id} className="border-b py-4">
                                     <p className="text-gray-800 font-semibold">{rant.username}</p>
                                     <p className="text-gray-600">{rant.content}</p>
-                                    <p className="text-gray-500 text-sm">{new Date(rant.created_at).toLocaleString()}</p>
+                                    <p className="text-gray-500 text-sm">
+                                        {new Date(rant.created_at).toLocaleString()}
+                                    </p>
                                     <button
                                         onClick={() => handleLike(rant.id)}
                                         className="mt-2 text-blue-600 hover:text-blue-800"
@@ -165,4 +169,4 @@ export default function RantZone() {
             </div>
         </div>
     );
-        }
+                        }
