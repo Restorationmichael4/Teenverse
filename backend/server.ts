@@ -504,6 +504,86 @@ app.post("/api/game-squads", authenticateToken, async (req, res) => {
     }
 });
 
+// Join a game squad
+app.post("/api/game-squads/join", authenticateToken, async (req, res) => {
+    try {
+        const { email, squadId } = req.body;
+        if (req.user.email !== email) {
+            return res.status(403).json({ message: "Unauthorized" });
+        }
+
+        const user: any = await new Promise<any>((resolve, reject) => {
+            db.get("SELECT id FROM users WHERE email = ?", [email], (err, row) => {
+                if (err) reject(err);
+                resolve(row);
+            });
+        });
+
+        if (!user) return res.status(404).json({ message: "User not found" });
+
+        const squad: any = await new Promise<any>((resolve, reject) => {
+            db.get("SELECT status, max_members FROM game_squads WHERE id = ?", [squadId], (err, row) => {
+                if (err) reject(err);
+                resolve(row);
+            });
+        });
+
+        if (!squad) return res.status(404).json({ message: "Squad not found" });
+        if (squad.status === "closed") return res.status(400).json({ message: "Squad is closed to new members" });
+
+        const memberCount: any = await new Promise<any>((resolve, reject) => {
+            db.get("SELECT COUNT(*) as count FROM game_squad_members WHERE squad_id = ?", [squadId], (err, row) => {
+                if (err) reject(err);
+                resolve(row);
+            });
+        });
+
+        if (memberCount.count >= squad.max_members) {
+            return res.status(400).json({ message: "Squad is full" });
+        }
+
+        const alreadyMember: any = await new Promise<any>((resolve, reject) => {
+            db.get("SELECT id FROM game_squad_members WHERE squad_id = ? AND user_id = ?", [squadId, user.id], (err, row) => {
+                if (err) reject(err);
+                resolve(row);
+            });
+        });
+
+        if (alreadyMember) return res.status(400).json({ message: "You are already a member of this squad" });
+
+        await new Promise<void>((resolve, reject) => {
+            db.run("INSERT INTO game_squad_members (squad_id, user_id) VALUES (?, ?)", [squadId, user.id], (err) => {
+                if (err) reject(err);
+                resolve();
+            });
+        });
+
+        res.json({ message: "Joined squad successfully!" });
+    } catch (err) {
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
+// Get game squad leaderboard
+app.get("/api/game-squads/leaderboard", authenticateToken, async (req, res) => {
+    try {
+        const leaderboard: any[] = await new Promise<any[]>((resolve, reject) => {
+            db.all(
+                "SELECT g.*, u.username as creator_username FROM game_squads g JOIN users u ON g.user_id = u.id ORDER BY g.wins DESC LIMIT 10",
+                [],
+                (err, rows) => {
+                    if (err) reject(err);
+                    resolve(rows);
+                }
+            );
+        });
+
+        res.json(leaderboard);
+    } catch (err) {
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+                                                 
 // Hype Battles endpoints
 app.get("/api/hype-battles", authenticateToken, async (req, res) => {
     try {
