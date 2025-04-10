@@ -114,7 +114,7 @@ db.run(`CREATE TABLE IF NOT EXISTS scheduled_battles (
     if (err) console.error("Error creating scheduled battles table:", err);
 });
 
-// Game squads table (removed post_mode column)
+// Update game_squads table to include status, max_members, and wins
 db.run(`CREATE TABLE IF NOT EXISTS game_squads (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER,
@@ -123,9 +123,25 @@ db.run(`CREATE TABLE IF NOT EXISTS game_squads (
     uid TEXT,
     description TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status TEXT DEFAULT 'open', -- 'open' or 'closed'
+    max_members INTEGER DEFAULT 5, -- Default max members
+    wins INTEGER DEFAULT 0, -- Track wins for leaderboards
     FOREIGN KEY(user_id) REFERENCES users(id)
 )`, (err) => {
     if (err) console.error("Error creating game squads table:", err);
+});
+
+// Create game_squad_members table to track squad memberships
+db.run(`CREATE TABLE IF NOT EXISTS game_squad_members (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    squad_id INTEGER,
+    user_id INTEGER,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(squad_id, user_id),
+    FOREIGN KEY(squad_id) REFERENCES game_squads(id),
+    FOREIGN KEY(user_id) REFERENCES users(id)
+)`, (err) => {
+    if (err) console.error("Error creating game squad members table:", err);
 });
 
 // Hall of Fame table
