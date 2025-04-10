@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { useParams, useNavigate } from "react-router-dom"; // Add useParams and useNavigate
-import { useAuth } from "../hooks/useAuth"; // Add useAuth
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 import Navigation from "../components/Navigation";
 
 export default function SquadDetails() {
-    const { squadId } = useParams<{ squadId: string }>(); // Get squadId from URL
-    const navigate = useNavigate(); // For navigation
-    const { user, token } = useAuth(); // Get user and token
+    const { squadId } = useParams<{ squadId: string }>();
+    const navigate = useNavigate();
+    const { user, token } = useAuth();
     const [clips, setClips] = useState<any[]>([]);
     const [messages, setMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState("");
@@ -18,45 +18,67 @@ export default function SquadDetails() {
     const [message, setMessage] = useState("");
     const [isMember, setIsMember] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null); // Add error state
 
     useEffect(() => {
+        console.log("SquadDetails: useEffect triggered", { user, token, squadId });
+
         const checkMembership = async () => {
-            if (!user || !token || !squadId) return;
+            if (!user || !token || !squadId) {
+                console.log("SquadDetails: Missing user, token, or squadId", { user, token, squadId });
+                setError("Missing authentication or squad ID.");
+                return;
+            }
             try {
+                console.log("SquadDetails: Checking membership...");
                 const userRes: any = await axios.get("https://teenverse.onrender.com/api/users/me", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
+                console.log("SquadDetails: User fetched", userRes.data);
                 const userId = userRes.data.id;
 
                 const isMemberRes: any = await axios.get(`https://teenverse.onrender.com/api/squad-messages/${squadId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
+                console.log("SquadDetails: Membership check response", isMemberRes);
 
                 if (isMemberRes.status === 200) {
                     setIsMember(true);
                     setMessages(isMemberRes.data);
+                    console.log("SquadDetails: User is a member, messages set", isMemberRes.data);
                 }
             } catch (err) {
+                console.error("SquadDetails: Error checking membership", err);
                 setMessage("You must be a member of this squad to access this page.");
+                setError("Failed to verify membership: " + (err.response?.data?.message || err.message));
             }
         };
 
         const fetchClips = async () => {
-            if (!user || !token || !squadId) return;
+            if (!user || !token || !squadId) {
+                console.log("SquadDetails: Missing user, token, or squadId for clips", { user, token, squadId });
+                return;
+            }
             try {
+                console.log("SquadDetails: Fetching clips...");
                 const res = await axios.get(`https://teenverse.onrender.com/api/game-clips/${squadId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
+                console.log("SquadDetails: Clips fetched", res.data);
                 setClips(res.data);
             } catch (err) {
+                console.error("SquadDetails: Error fetching clips", err);
                 setMessage("Error fetching clips: " + (err.response?.data?.message || err.message));
+                setError("Failed to fetch clips: " + (err.response?.data?.message || err.message));
             }
         };
 
         const fetchData = async () => {
             setLoading(true);
+            console.log("SquadDetails: Fetching data...");
             await Promise.all([checkMembership(), fetchClips()]);
             setLoading(false);
+            console.log("SquadDetails: Data fetching complete", { isMember, clips, messages });
         };
 
         if (user && token && squadId) {
@@ -65,6 +87,8 @@ export default function SquadDetails() {
             return () => clearInterval(interval);
         } else {
             setLoading(false);
+            setError("User, token, or squad ID is missing.");
+            console.log("SquadDetails: Skipping fetchData due to missing user, token, or squadId");
         }
     }, [user, token, squadId]);
 
@@ -157,6 +181,7 @@ export default function SquadDetails() {
     };
 
     if (!user || !token) {
+        console.log("SquadDetails: Rendering login required message");
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-100">
                 <div className="text-center text-red-500 text-xl">Please log in to access this squad.</div>
@@ -165,6 +190,7 @@ export default function SquadDetails() {
     }
 
     if (loading) {
+        console.log("SquadDetails: Rendering loading state");
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-100">
                 <div className="text-center text-gray-800 text-xl">Loading...</div>
@@ -172,7 +198,25 @@ export default function SquadDetails() {
         );
     }
 
+    if (error) {
+        console.log("SquadDetails: Rendering error state", error);
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="text-center">
+                    <p className="text-red-500 text-xl mb-4">{error}</p>
+                    <button
+                        onClick={() => navigate("/game-squad")}
+                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                    >
+                        Back to Game Squad
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     if (!isMember) {
+        console.log("SquadDetails: Rendering non-member message", message);
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-100">
                 <div className="text-center">
@@ -188,6 +232,7 @@ export default function SquadDetails() {
         );
     }
 
+    console.log("SquadDetails: Rendering main content", { clips, messages });
     return (
         <div>
             <Navigation />
