@@ -3,6 +3,7 @@ import axios from "axios";
 import { useAuth } from "../hooks/useAuth";
 import Navigation from "../components/Navigation";
 import CoinFlip from "./CoinFlip";
+import SquadDetails from "./SquadDetails";
 
 interface GameSquad {
     id: number;
@@ -17,12 +18,34 @@ interface GameSquad {
     creator_username?: string;
 }
 
+interface Tournament {
+    id: number;
+    squad_id: number;
+    title: string;
+    description: string;
+    game_name: string;
+    status: string;
+    winner_id: number | null;
+    created_at: string;
+    squad_game_name: string;
+    creator_username: string;
+    participants: { id: number; game_name: string; username: string }[];
+}
+
 export default function GameSquad() {
     const [gameName, setGameName] = useState("");
     const [uid, setUid] = useState("");
     const [description, setDescription] = useState("");
     const [squads, setSquads] = useState<GameSquad[]>([]);
     const [leaderboard, setLeaderboard] = useState<GameSquad[]>([]);
+    const [tournaments, setTournaments] = useState<Tournament[]>([]);
+    const [tournamentTitle, setTournamentTitle] = useState("");
+    const [tournamentDescription, setTournamentDescription] = useState("");
+    const [tournamentGameName, setTournamentGameName] = useState("");
+    const [selectedSquadId, setSelectedSquadId] = useState<number | null>(null);
+    const [clips, setClips] = useState<any[]>([]);
+    const [clipUrl, setClipUrl] = useState("");
+    const [clipDescription, setClipDescription] = useState("");
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(true);
     const { user, token } = useAuth();
@@ -52,9 +75,21 @@ export default function GameSquad() {
             }
         };
 
+        const fetchTournaments = async () => {
+            if (!user || !token) return;
+            try {
+                const res = await axios.get("https://teenverse.onrender.com/api/tournaments", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setTournaments(res.data);
+            } catch (err) {
+                setMessage("Error fetching tournaments: " + (err.response?.data?.message || err.message));
+            }
+        };
+
         const fetchData = async () => {
             setLoading(true);
-            await Promise.all([fetchSquads(), fetchLeaderboard()]);
+            await Promise.all([fetchSquads(), fetchLeaderboard(), fetchTournaments()]);
             setLoading(false);
         };
 
@@ -114,6 +149,156 @@ export default function GameSquad() {
         }
     };
 
+    const handleReportWin = async (squadId: number) => {
+        if (!user || !token) {
+            setMessage("Please log in to report a win.");
+            return;
+        }
+        try {
+            const res = await axios.post("https://teenverse.onrender.com/api/game-squads/report-win", {
+                email: user.email,
+                squadId
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setMessage(res.data.message);
+            const squadsRes = await axios.get("https://teenverse.onrender.com/api/game-squads", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setSquads(squadsRes.data);
+            const leaderboardRes = await axios.get("https://teenverse.onrender.com/api/game-squads/leaderboard", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setLeaderboard(leaderboardRes.data);
+        } catch (err) {
+            setMessage("Error reporting win: " + (err.response?.data?.message || err.message));
+        }
+    };
+
+    const handleCreateTournament = async (squadId: number) => {
+        if (!user || !token) {
+            setMessage("Please log in to create a tournament.");
+            return;
+        }
+        if (!tournamentTitle || !tournamentDescription || !tournamentGameName) {
+            setMessage("Please fill in all tournament fields.");
+            return;
+        }
+        try {
+            const res = await axios.post("https://teenverse.onrender.com/api/tournaments", {
+                email: user.email,
+                squadId,
+                title: tournamentTitle,
+                description: tournamentDescription,
+                gameName: tournamentGameName
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setMessage(res.data.message);
+            setTournamentTitle("");
+            setTournamentDescription("");
+            setTournamentGameName("");
+            const tournamentsRes = await axios.get("https://teenverse.onrender.com/api/tournaments", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setTournaments(tournamentsRes.data);
+        } catch (err) {
+            setMessage("Error creating tournament: " + (err.response?.data?.message || err.message));
+        }
+    };
+
+    const handleJoinTournament = async (tournamentId: number, squadId: number) => {
+        if (!user || !token) {
+            setMessage("Please log in to join a tournament.");
+            return;
+        }
+        try {
+            const res = await axios.post("https://teenverse.onrender.com/api/tournaments/join", {
+                email: user.email,
+                tournamentId,
+                squadId
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setMessage(res.data.message);
+            const tournamentsRes = await axios.get("https://teenverse.onrender.com/api/tournaments", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setTournaments(tournamentsRes.data);
+        } catch (err) {
+            setMessage("Error joining tournament: " + (err.response?.data?.message || err.message));
+        }
+    };
+
+    const handleDeclareWinner = async (tournamentId: number, winnerId: number) => {
+        if (!user || !token) {
+            setMessage("Please log in to declare a winner.");
+            return;
+        }
+        try {
+            const res = await axios.post("https://teenverse.onrender.com/api/tournaments/declare-winner", {
+                email: user.email,
+                tournamentId,
+                winnerId
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setMessage(res.data.message);
+            const tournamentsRes = await axios.get("https://teenverse.onrender.com/api/tournaments", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setTournaments(tournamentsRes.data);
+            const leaderboardRes = await axios.get("https://teenverse.onrender.com/api/game-squads/leaderboard", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setLeaderboard(leaderboardRes.data);
+        } catch (err) {
+            setMessage("Error declaring winner: " + (err.response?.data?.message || err.message));
+        }
+    };
+
+    const handleViewSquad = async (squadId: number) => {
+        setSelectedSquadId(squadId);
+        try {
+            const res = await axios.get(`https://teenverse.onrender.com/api/game-clips/${squadId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setClips(res.data);
+        } catch (err) {
+            setMessage("Error fetching clips: " + (err.response?.data?.message || err.message));
+        }
+    };
+
+    const handleUploadClip = async (squadId: number) => {
+        if (!user || !token) {
+            setMessage("Please log in to upload a clip.");
+            return;
+        }
+        if (!clipUrl || !clipDescription) {
+            setMessage("Please provide a clip URL and description.");
+            return;
+        }
+        try {
+            const res = await axios.post("https://teenverse.onrender.com/api/game-clips", {
+                email: user.email,
+                squadId,
+                clipUrl,
+                description: clipDescription
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setMessage(res.data.message);
+            setClipUrl("");
+            setClipDescription("");
+            const clipsRes = await axios.get(`https://teenverse.onrender.com/api/game-clips/${squadId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setClips(clipsRes.data);
+        } catch (err) {
+            setMessage("Error uploading clip: " + (err.response?.data?.message || err.message));
+        }
+    };
+
     if (!user || !token) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -127,6 +312,24 @@ export default function GameSquad() {
             <div className="min-h-screen flex items-center justify-center bg-gray-100">
                 <div className="text-center text-gray-800 text-xl">Loading...</div>
             </div>
+        );
+    }
+
+    if (selectedSquadId) {
+        return (
+            <SquadDetails
+                squadId={selectedSquadId}
+                clips={clips}
+                setClips={setClips}
+                setMessage={setMessage}
+                user={user}
+                token={token}
+                handleUploadClip={handleUploadClip}
+                clipUrl={clipUrl}
+                setClipUrl={setClipUrl}
+                clipDescription={clipDescription}
+                setClipDescription={setClipDescription}
+            />
         );
     }
 
@@ -192,6 +395,78 @@ export default function GameSquad() {
                     </div>
 
                     <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
+                        <h2 className="text-xl font-semibold text-gray-800 mb-4">Tournaments</h2>
+                        {tournaments.length > 0 ? (
+                            tournaments.map((tournament) => (
+                                <div key={tournament.id} className="border-b py-4">
+                                    <p className="text-gray-800 font-semibold">{tournament.title}</p>
+                                    <p className="text-gray-600">Game: {tournament.game_name}</p>
+                                    <p className="text-gray-600">Created by: {tournament.creator_username} ({tournament.squad_game_name} Squad)</p>
+                                    <p className="text-gray-600">{tournament.description}</p>
+                                    <p className="text-gray-500 text-sm">Status: {tournament.status}</p>
+                                    <p className="text-gray-500 text-sm">{new Date(tournament.created_at).toLocaleString()}</p>
+                                    {tournament.participants.length > 0 && (
+                                        <div className="mt-2">
+                                            <p className="text-gray-600 font-semibold">Participants:</p>
+                                            <ul className="list-disc list-inside">
+                                                {tournament.participants.map((participant) => (
+                                                    <li key={participant.id} className="text-gray-600">
+                                                        {participant.game_name} Squad (Creator: {participant.username})
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+                                    {tournament.status === "open" && squads.some(squad => squad.username === user.username) && (
+                                        <div className="mt-2">
+                                            <p className="text-gray-600 font-semibold">Join with your squad:</p>
+                                            <select
+                                                onChange={(e) => handleJoinTournament(tournament.id, parseInt(e.target.value))}
+                                                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4"
+                                            >
+                                                <option value="">Select a squad</option>
+                                                {squads
+                                                    .filter(squad => squad.username === user.username)
+                                                    .map(squad => (
+                                                        <option key={squad.id} value={squad.id}>
+                                                            {squad.game_name} Squad
+                                                        </option>
+                                                    ))}
+                                            </select>
+                                        </div>
+                                    )}
+                                    {tournament.status !== "completed" && tournament.creator_username === user.username && (
+                                        <div className="mt-2">
+                                            <p className="text-gray-600 font-semibold">Declare Winner:</p>
+                                            <select
+                                                onChange={(e) => handleDeclareWinner(tournament.id, parseInt(e.target.value))}
+                                                className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 mb-4"
+                                            >
+                                                <option value="">Select a winner</option>
+                                                <option value={tournament.squad_id}>
+                                                    {tournament.squad_game_name} Squad (Creator: {tournament.creator_username})
+                                                </option>
+                                                {tournament.participants.map(participant => (
+                                                    <option key={participant.id} value={participant.id}>
+                                                        {participant.game_name} Squad (Creator: {participant.username})
+                                                    </option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                    )}
+                                    {tournament.status === "completed" && tournament.winner_id && (
+                                        <p className="text-green-600 font-semibold mt-2">
+                                            Winner: {tournament.participants.find(p => p.id === tournament.winner_id)?.game_name || tournament.squad_game_name} Squad
+                                        </p>
+                                    )}
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-gray-600">No tournaments yet.</p>
+                        )}
+                    </div>
+
+                    <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
                         <h2 className="text-xl font-semibold text-gray-800 mb-4">Game Squads</h2>
                         {squads.length > 0 ? (
                             squads.map((squad) => (
@@ -201,15 +476,61 @@ export default function GameSquad() {
                                     <p className="text-gray-600">UID: {squad.uid}</p>
                                     <p className="text-gray-600">{squad.description}</p>
                                     <p className="text-gray-500 text-sm">Status: {squad.status}</p>
+                                    <p className="text-gray-500 text-sm">Wins: {squad.wins}</p>
                                     <p className="text-gray-500 text-sm">{new Date(squad.created_at).toLocaleString()}</p>
                                     {squad.status === "open" && (
                                         <button
                                             onClick={() => handleJoinSquad(squad.id)}
-                                            className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                                            className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition mr-2"
                                         >
                                             Join Squad
                                         </button>
                                     )}
+                                    {squad.username === user.username && (
+                                        <>
+                                            <button
+                                                onClick={() => handleReportWin(squad.id)}
+                                                className="mt-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition mr-2"
+                                            >
+                                                Report Win
+                                            </button>
+                                            <div className="mt-4">
+                                                <h3 className="text-lg font-semibold text-gray-800 mb-2">Create a Tournament</h3>
+                                                <input
+                                                    type="text"
+                                                    value={tournamentTitle}
+                                                    onChange={(e) => setTournamentTitle(e.target.value)}
+                                                    placeholder="Tournament Title"
+                                                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 mb-4"
+                                                />
+                                                <input
+                                                    type="text"
+                                                    value={tournamentGameName}
+                                                    onChange={(e) => setTournamentGameName(e.target.value)}
+                                                    placeholder="Game Name (e.g., CODM)"
+                                                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 mb-4"
+                                                />
+                                                <textarea
+                                                    value={tournamentDescription}
+                                                    onChange={(e) => setTournamentDescription(e.target.value)}
+                                                    placeholder="Tournament Description"
+                                                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 mb-4"
+                                                />
+                                                <button
+                                                    onClick={() => handleCreateTournament(squad.id)}
+                                                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition"
+                                                >
+                                                    Create Tournament
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                    <button
+                                        onClick={() => handleViewSquad(squad.id)}
+                                        className="mt-2 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
+                                    >
+                                        View Squad
+                                    </button>
                                 </div>
                             ))
                         ) : (
@@ -220,4 +541,4 @@ export default function GameSquad() {
             </div>
         </div>
     );
-                                                        }
+    }
