@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom"; // Add this import
 import { useAuth } from "../hooks/useAuth";
 import Navigation from "../components/Navigation";
 import CoinFlip from "./CoinFlip";
-import SquadDetails from "./SquadDetails";
 
 interface GameSquad {
     id: number;
@@ -42,13 +42,10 @@ export default function GameSquad() {
     const [tournamentTitle, setTournamentTitle] = useState("");
     const [tournamentDescription, setTournamentDescription] = useState("");
     const [tournamentGameName, setTournamentGameName] = useState("");
-    const [selectedSquadId, setSelectedSquadId] = useState<number | null>(null);
-    const [clips, setClips] = useState<any[]>([]);
-    const [clipUrl, setClipUrl] = useState("");
-    const [clipDescription, setClipDescription] = useState("");
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(true);
     const { user, token } = useAuth();
+    const navigate = useNavigate(); // Add this hook
 
     useEffect(() => {
         const fetchSquads = async () => {
@@ -257,46 +254,8 @@ export default function GameSquad() {
         }
     };
 
-    const handleViewSquad = async (squadId: number) => {
-        setSelectedSquadId(squadId);
-        try {
-            const res = await axios.get(`https://teenverse.onrender.com/api/game-clips/${squadId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setClips(res.data);
-        } catch (err) {
-            setMessage("Error fetching clips: " + (err.response?.data?.message || err.message));
-        }
-    };
-
-    const handleUploadClip = async (squadId: number) => {
-        if (!user || !token) {
-            setMessage("Please log in to upload a clip.");
-            return;
-        }
-        if (!clipUrl || !clipDescription) {
-            setMessage("Please provide a clip URL and description.");
-            return;
-        }
-        try {
-            const res = await axios.post("https://teenverse.onrender.com/api/game-clips", {
-                email: user.email,
-                squadId,
-                clipUrl,
-                description: clipDescription
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setMessage(res.data.message);
-            setClipUrl("");
-            setClipDescription("");
-            const clipsRes = await axios.get(`https://teenverse.onrender.com/api/game-clips/${squadId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setClips(clipsRes.data);
-        } catch (err) {
-            setMessage("Error uploading clip: " + (err.response?.data?.message || err.message));
-        }
+    const handleViewSquad = (squadId: number) => {
+        navigate(`/squad-details/${squadId}`); // Navigate to SquadDetails page
     };
 
     if (!user || !token) {
@@ -312,24 +271,6 @@ export default function GameSquad() {
             <div className="min-h-screen flex items-center justify-center bg-gray-100">
                 <div className="text-center text-gray-800 text-xl">Loading...</div>
             </div>
-        );
-    }
-
-    if (selectedSquadId) {
-        return (
-            <SquadDetails
-                squadId={selectedSquadId}
-                clips={clips}
-                setClips={setClips}
-                setMessage={setMessage}
-                user={user}
-                token={token}
-                handleUploadClip={handleUploadClip}
-                clipUrl={clipUrl}
-                setClipUrl={setClipUrl}
-                clipDescription={clipDescription}
-                setClipDescription={setClipDescription}
-            />
         );
     }
 
@@ -541,4 +482,4 @@ export default function GameSquad() {
             </div>
         </div>
     );
-    }
+}
