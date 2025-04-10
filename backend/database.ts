@@ -144,6 +144,62 @@ db.run(`CREATE TABLE IF NOT EXISTS game_squad_members (
     if (err) console.error("Error creating game squad members table:", err);
 });
 
+// Create tournaments table
+db.run(`CREATE TABLE IF NOT EXISTS tournaments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    squad_id INTEGER,
+    title TEXT,
+    description TEXT,
+    game_name TEXT,
+    status TEXT DEFAULT 'open', -- 'open', 'in_progress', 'completed'
+    winner_id INTEGER, -- References the winning squad_id
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(squad_id) REFERENCES game_squads(id),
+    FOREIGN KEY(winner_id) REFERENCES game_squads(id)
+)`, (err) => {
+    if (err) console.error("Error creating tournaments table:", err);
+});
+
+// Create tournament_participants table
+db.run(`CREATE TABLE IF NOT EXISTS tournament_participants (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tournament_id INTEGER,
+    squad_id INTEGER,
+    joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(tournament_id, squad_id),
+    FOREIGN KEY(tournament_id) REFERENCES tournaments(id),
+    FOREIGN KEY(squad_id) REFERENCES game_squads(id)
+)`, (err) => {
+    if (err) console.error("Error creating tournament participants table:", err);
+});
+
+// Create game_clips table
+db.run(`CREATE TABLE IF NOT EXISTS game_clips (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    squad_id INTEGER,
+    user_id INTEGER,
+    clip_url TEXT,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(squad_id) REFERENCES game_squads(id),
+    FOREIGN KEY(user_id) REFERENCES users(id)
+)`, (err) => {
+    if (err) console.error("Error creating game clips table:", err);
+});
+
+// Create squad_messages table
+db.run(`CREATE TABLE IF NOT EXISTS squad_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    squad_id INTEGER,
+    user_id INTEGER,
+    message TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(squad_id) REFERENCES game_squads(id),
+    FOREIGN KEY(user_id) REFERENCES users(id)
+)`, (err) => {
+    if (err) console.error("Error creating squad messages table:", err);
+});
+
 // Hall of Fame table
 db.run(`CREATE TABLE IF NOT EXISTS hall_of_fame (
     user_id INTEGER PRIMARY KEY,
