@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import RantZone from "./pages/RantZone";
 import GameSquad from "./pages/GameSquad";
+import SquadDetails from "./pages/SquadDetails";
 import Profile from "./pages/Profile";
 import NewsFeed from "./pages/NewsFeed";
 import BuyCoins from "./pages/BuyCoins";
@@ -23,6 +24,7 @@ export default function App() {
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/rant-zone" element={<RantZone />} />
                     <Route path="/game-squad" element={<GameSquad />} />
+                    <Route path="/squad-details/:squadId" element={<SquadDetails />} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/news-feed" element={<NewsFeed />} />
                     <Route path="/buy-coins" element={<BuyCoins />} />
