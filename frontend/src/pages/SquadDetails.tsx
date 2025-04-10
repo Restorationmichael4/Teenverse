@@ -171,4 +171,59 @@ export default function SquadDetails({
                         />
                         <button
                             onClick={handleScheduleMatch}
-                            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700
+                            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+                        >
+                            Schedule Match
+                        </button>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
+                        <h2 className="text-xl font-semibold text-gray-800 mb-4">Upload a Game Clip</h2>
+                        <input
+                            type="text"
+                            value={clipUrl}
+                            onChange={(e) => setClipUrl(e.target.value)}
+                            placeholder="Clip URL (e.g., YouTube link)"
+                            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 mb-4"
+                        />
+                        <textarea
+                            value={clipDescription}
+                            onChange={(e) => setClipDescription(e.target.value)}
+                            placeholder="Clip Description"
+                            className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 mb-4"
+                        />
+                        <button
+                            onClick={() => handleUploadClip(squadId)}
+                            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
+                        >
+                            Upload Clip
+                        </button>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
+                        <h2 className="text-xl font-semibold text-gray-800 mb-4">Game Clips</h2>
+                        {clips.length > 0 ? (
+                            clips.map((clip) => (
+                                <div key={clip.id} className="border-b py-4">
+                                    <p className="text-gray-800 font-semibold">Uploaded by: {clip.username}</p>
+                                    <p className="text-gray-600">{clip.description}</p>
+                                    <a
+                                        href={clip.clip_url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:underline"
+                                    >
+                                        Watch Clip
+                                    </a>
+                                    <p className="text-gray-500 text-sm">{new Date(clip.created_at).toLocaleString()}</p>
+                                </div>
+                            ))
+                        ) : (
+                            <p className="text-gray-600">No clips yet.</p>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+                    }
