@@ -1,99 +1,59 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
 import Navigation from "../components/Navigation";
 
-export default function SquadDetails() {
-    const { squadId } = useParams<{ squadId: string }>();
-    const navigate = useNavigate();
-    const { user, token } = useAuth();
-    const [clips, setClips] = useState<any[]>([]);
+interface SquadDetailsProps {
+    squadId: number;
+    clips: any[];
+    setClips: (clips: any[]) => void;
+    setMessage: (message: string) => void;
+    user: { email: string; username?: string } | null;
+    token: string | null;
+    handleUploadClip: (squadId: number) => void;
+    clipUrl: string;
+    setClipUrl: (url: string) => void;
+    clipDescription: string;
+    setClipDescription: (description: string) => void;
+}
+
+export default function SquadDetails({
+    squadId,
+    clips,
+    setClips,
+    setMessage,
+    user,
+    token,
+    handleUploadClip,
+    clipUrl,
+    setClipUrl,
+    clipDescription,
+    setClipDescription
+}: SquadDetailsProps) {
     const [messages, setMessages] = useState<any[]>([]);
     const [newMessage, setNewMessage] = useState("");
     const [matchTime, setMatchTime] = useState("");
     const [matchDescription, setMatchDescription] = useState("");
-    const [clipUrl, setClipUrl] = useState("");
-    const [clipDescription, setClipDescription] = useState("");
-    const [message, setMessage] = useState("");
-    const [isMember, setIsMember] = useState(false);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null); // Add error state
 
     useEffect(() => {
-        console.log("SquadDetails: useEffect triggered", { user, token, squadId });
-
-        const checkMembership = async () => {
-            if (!user || !token || !squadId) {
-                console.log("SquadDetails: Missing user, token, or squadId", { user, token, squadId });
-                setError("Missing authentication or squad ID.");
-                return;
-            }
+        const fetchMessages = async () => {
+            if (!user || !token) return;
             try {
-                console.log("SquadDetails: Checking membership...");
-                const userRes: any = await axios.get("https://teenverse.onrender.com/api/users/me", {
+                const res = await axios.get(`https://teenverse.onrender.com/api/squad-messages/${squadId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                console.log("SquadDetails: User fetched", userRes.data);
-                const userId = userRes.data.id;
-
-                const isMemberRes: any = await axios.get(`https://teenverse.onrender.com/api/squad-messages/${squadId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                console.log("SquadDetails: Membership check response", isMemberRes);
-
-                if (isMemberRes.status === 200) {
-                    setIsMember(true);
-                    setMessages(isMemberRes.data);
-                    console.log("SquadDetails: User is a member, messages set", isMemberRes.data);
-                }
+                setMessages(res.data);
             } catch (err) {
-                console.error("SquadDetails: Error checking membership", err);
-                setMessage("You must be a member of this squad to access this page.");
-                setError("Failed to verify membership: " + (err.response?.data?.message || err.message));
+                setMessage("Error fetching messages: " + (err.response?.data?.message || err.message));
             }
         };
 
-        const fetchClips = async () => {
-            if (!user || !token || !squadId) {
-                console.log("SquadDetails: Missing user, token, or squadId for clips", { user, token, squadId });
-                return;
-            }
-            try {
-                console.log("SquadDetails: Fetching clips...");
-                const res = await axios.get(`https://teenverse.onrender.com/api/game-clips/${squadId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                console.log("SquadDetails: Clips fetched", res.data);
-                setClips(res.data);
-            } catch (err) {
-                console.error("SquadDetails: Error fetching clips", err);
-                setMessage("Error fetching clips: " + (err.response?.data?.message || err.message));
-                setError("Failed to fetch clips: " + (err.response?.data?.message || err.message));
-            }
-        };
-
-        const fetchData = async () => {
-            setLoading(true);
-            console.log("SquadDetails: Fetching data...");
-            await Promise.all([checkMembership(), fetchClips()]);
-            setLoading(false);
-            console.log("SquadDetails: Data fetching complete", { isMember, clips, messages });
-        };
-
-        if (user && token && squadId) {
-            fetchData();
-            const interval = setInterval(checkMembership, 5000); // Poll messages every 5 seconds
-            return () => clearInterval(interval);
-        } else {
-            setLoading(false);
-            setError("User, token, or squad ID is missing.");
-            console.log("SquadDetails: Skipping fetchData due to missing user, token, or squadId");
-        }
-    }, [user, token, squadId]);
+        fetchMessages();
+        const interval = setInterval(fetchMessages, 5000); // Poll every 5 seconds
+        return () => clearInterval(interval);
+    }, [user, token, squadId, setMessage]);
 
     const handleSendMessage = async () => {
-        if (!user || !token || !squadId) {
+        if (!user || !token) {
             setMessage("Please log in to send a message.");
             return;
         }
@@ -104,7 +64,7 @@ export default function SquadDetails() {
         try {
             const res = await axios.post("https://teenverse.onrender.com/api/squad-messages", {
                 email: user.email,
-                squadId: parseInt(squadId),
+                squadId,
                 message: newMessage
             }, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -121,7 +81,7 @@ export default function SquadDetails() {
     };
 
     const handleScheduleMatch = async () => {
-        if (!user || !token || !squadId) {
+        if (!user || !token) {
             setMessage("Please log in to schedule a match.");
             return;
         }
@@ -133,7 +93,7 @@ export default function SquadDetails() {
         try {
             const res = await axios.post("https://teenverse.onrender.com/api/squad-messages", {
                 email: user.email,
-                squadId: parseInt(squadId),
+                squadId,
                 message
             }, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -150,38 +110,7 @@ export default function SquadDetails() {
         }
     };
 
-    const handleUploadClip = async () => {
-        if (!user || !token || !squadId) {
-            setMessage("Please log in to upload a clip.");
-            return;
-        }
-        if (!clipUrl || !clipDescription) {
-            setMessage("Please provide a clip URL and description.");
-            return;
-        }
-        try {
-            const res = await axios.post("https://teenverse.onrender.com/api/game-clips", {
-                email: user.email,
-                squadId: parseInt(squadId),
-                clipUrl,
-                description: clipDescription
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setMessage(res.data.message);
-            setClipUrl("");
-            setClipDescription("");
-            const clipsRes = await axios.get(`https://teenverse.onrender.com/api/game-clips/${squadId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setClips(clipsRes.data);
-        } catch (err) {
-            setMessage("Error uploading clip: " + (err.response?.data?.message || err.message));
-        }
-    };
-
     if (!user || !token) {
-        console.log("SquadDetails: Rendering login required message");
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-100">
                 <div className="text-center text-red-500 text-xl">Please log in to access this squad.</div>
@@ -189,71 +118,16 @@ export default function SquadDetails() {
         );
     }
 
-    if (loading) {
-        console.log("SquadDetails: Rendering loading state");
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-100">
-                <div className="text-center text-gray-800 text-xl">Loading...</div>
-            </div>
-        );
-    }
-
-    if (error) {
-        console.log("SquadDetails: Rendering error state", error);
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-100">
-                <div className="text-center">
-                    <p className="text-red-500 text-xl mb-4">{error}</p>
-                    <button
-                        onClick={() => navigate("/game-squad")}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-                    >
-                        Back to Game Squad
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    if (!isMember) {
-        console.log("SquadDetails: Rendering non-member message", message);
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-100">
-                <div className="text-center">
-                    <p className="text-red-500 text-xl mb-4">{message}</p>
-                    <button
-                        onClick={() => navigate("/game-squad")}
-                        className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-                    >
-                        Back to Game Squad
-                    </button>
-                </div>
-            </div>
-        );
-    }
-
-    console.log("SquadDetails: Rendering main content", { clips, messages });
     return (
         <div>
             <Navigation />
             <div className="min-h-screen bg-gray-100 p-6">
                 <div className="max-w-4xl mx-auto">
-                    <div className="flex justify-between items-center mb-6">
-                        <h1 className="text-3xl font-bold text-gray-800">Squad Details</h1>
-                        <button
-                            onClick={() => navigate("/game-squad")}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-                        >
-                            Back to Game Squad
-                        </button>
-                    </div>
+                    <h1 className="text-3xl font-bold text-gray-800 mb-6">Squad Details</h1>
                     <p className="text-center text-green-600 mb-6">{message}</p>
 
                     <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
                         <h2 className="text-xl font-semibold text-gray-800 mb-4">Squad Chat</h2>
-                        <p className="text-gray-600 mb-4">
-                            Chat with your squad members here! Share strategies, plan matches, or just hang out. 😄
-                        </p>
                         <div className="bg-gray-50 p-4 rounded-lg h-64 overflow-y-auto mb-4">
                             {messages.length > 0 ? (
                                 messages.map((msg) => (
@@ -264,7 +138,7 @@ export default function SquadDetails() {
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-gray-600">No messages yet. Start the conversation!</p>
+                                <p className="text-gray-600">No messages yet.</p>
                             )}
                         </div>
                         <textarea
@@ -283,9 +157,6 @@ export default function SquadDetails() {
 
                     <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
                         <h2 className="text-xl font-semibold text-gray-800 mb-4">Schedule a Match</h2>
-                        <p className="text-gray-600 mb-4">
-                            Plan a gaming session with your squad! Select a time and add a description.
-                        </p>
                         <input
                             type="datetime-local"
                             value={matchTime}
@@ -308,9 +179,6 @@ export default function SquadDetails() {
 
                     <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
                         <h2 className="text-xl font-semibold text-gray-800 mb-4">Upload a Game Clip</h2>
-                        <p className="text-gray-600 mb-4">
-                            Share your best gaming moments! Paste a URL (e.g., YouTube link) and add a description.
-                        </p>
                         <input
                             type="text"
                             value={clipUrl}
@@ -325,7 +193,7 @@ export default function SquadDetails() {
                             className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 mb-4"
                         />
                         <button
-                            onClick={handleUploadClip}
+                            onClick={() => handleUploadClip(squadId)}
                             className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition"
                         >
                             Upload Clip
@@ -358,4 +226,4 @@ export default function SquadDetails() {
             </div>
         </div>
     );
-                }
+        }
