@@ -13,7 +13,7 @@ export default function BuyCoins() {
             return;
         }
         try {
-            const res = await axios.post("/buy-coins", { email: user.email }, {
+            const res = await axios.post("/api/buy-coins", { email: user.email }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setMessage(res.data.message);
