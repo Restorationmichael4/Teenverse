@@ -6,11 +6,15 @@ import CoinFlip from "./CoinFlip";
 
 interface GameSquad {
     id: number;
-    gameName: string;
+    game_name: string;
     uid: string;
     description: string;
     username: string;
     created_at: string;
+    status: string;
+    max_members: number;
+    wins: number;
+    creator_username?: string;
 }
 
 export default function GameSquad() {
@@ -18,6 +22,7 @@ export default function GameSquad() {
     const [uid, setUid] = useState("");
     const [description, setDescription] = useState("");
     const [squads, setSquads] = useState<GameSquad[]>([]);
+    const [leaderboard, setLeaderboard] = useState<GameSquad[]>([]);
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(true);
     const { user, token } = useAuth();
@@ -29,16 +34,27 @@ export default function GameSquad() {
                 const res = await axios.get("https://teenverse.onrender.com/api/game-squads", {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                console.log("Fetched squads:", res.data); // Debug
                 setSquads(res.data);
             } catch (err) {
                 setMessage("Error fetching squads: " + (err.response?.data?.message || err.message));
             }
         };
 
+        const fetchLeaderboard = async () => {
+            if (!user || !token) return;
+            try {
+                const res = await axios.get("https://teenverse.onrender.com/api/game-squads/leaderboard", {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setLeaderboard(res.data);
+            } catch (err) {
+                setMessage("Error fetching leaderboard: " + (err.response?.data?.message || err.message));
+            }
+        };
+
         const fetchData = async () => {
             setLoading(true);
-            await fetchSquads();
+            await Promise.all([fetchSquads(), fetchLeaderboard()]);
             setLoading(false);
         };
 
@@ -59,7 +75,6 @@ export default function GameSquad() {
             return;
         }
         try {
-            console.log("Creating squad at URL:", "https://teenverse.onrender.com/api/game-squads"); // Debug
             const res = await axios.post("https://teenverse.onrender.com/api/game-squads", {
                 email: user.email,
                 gameName,
@@ -81,16 +96,38 @@ export default function GameSquad() {
         }
     };
 
+    const handleJoinSquad = async (squadId: number) => {
+        if (!user || !token) {
+            setMessage("Please log in to join a squad.");
+            return;
+        }
+        try {
+            const res = await axios.post("https://teenverse.onrender.com/api/game-squads/join", {
+                email: user.email,
+                squadId
+            }, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setMessage(res.data.message);
+        } catch (err) {
+            setMessage("Error joining squad: " + (err.response?.data?.message || err.message));
+        }
+    };
+
     if (!user || !token) {
-        return <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="text-center text-red-500 text-xl">Please log in to access the Game Squad.</div>
-        </div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="text-center text-red-500 text-xl">Please log in to access the Game Squad.</div>
+            </div>
+        );
     }
 
     if (loading) {
-        return <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="text-center text-gray-800 text-xl">Loading...</div>
-        </div>;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-100">
+                <div className="text-center text-gray-800 text-xl">Loading...</div>
+            </div>
+        );
     }
 
     return (
@@ -134,15 +171,45 @@ export default function GameSquad() {
                     </div>
 
                     <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
+                        <h2 className="text-xl font-semibold text-gray-800 mb-4">Game Squad Leaderboard</h2>
+                        {leaderboard.length > 0 ? (
+                            <div className="space-y-4">
+                                {leaderboard.map((squad, index) => (
+                                    <div key={squad.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                                        <div>
+                                            <p className="text-gray-800 font-semibold">
+                                                #{index + 1} {squad.game_name} Squad
+                                            </p>
+                                            <p className="text-gray-600">Created by: {squad.creator_username}</p>
+                                            <p className="text-gray-600">Wins: {squad.wins}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-gray-600">No squads in the leaderboard yet.</p>
+                        )}
+                    </div>
+
+                    <div className="bg-white p-6 rounded-lg shadow-lg mb-6">
                         <h2 className="text-xl font-semibold text-gray-800 mb-4">Game Squads</h2>
                         {squads.length > 0 ? (
                             squads.map((squad) => (
                                 <div key={squad.id} className="border-b py-4">
-                                    <p className="text-gray-800 font-semibold">{squad.gameName} Squad</p>
+                                    <p className="text-gray-800 font-semibold">{squad.game_name} Squad</p>
                                     <p className="text-gray-600">Created by: {squad.username}</p>
                                     <p className="text-gray-600">UID: {squad.uid}</p>
                                     <p className="text-gray-600">{squad.description}</p>
+                                    <p className="text-gray-500 text-sm">Status: {squad.status}</p>
                                     <p className="text-gray-500 text-sm">{new Date(squad.created_at).toLocaleString()}</p>
+                                    {squad.status === "open" && (
+                                        <button
+                                            onClick={() => handleJoinSquad(squad.id)}
+                                            className="mt-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                                        >
+                                            Join Squad
+                                        </button>
+                                    )}
                                 </div>
                             ))
                         ) : (
@@ -153,4 +220,4 @@ export default function GameSquad() {
             </div>
         </div>
     );
-                }
+                                                        }
