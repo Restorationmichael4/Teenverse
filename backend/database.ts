@@ -131,17 +131,16 @@ db.run(`CREATE TABLE IF NOT EXISTS game_squads (
     if (err) console.error("Error creating game squads table:", err);
 });
 
-// Create game_squad_members table to track squad memberships
-db.run(`CREATE TABLE IF NOT EXISTS game_squad_members (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+// Create squad_members table to track squad memberships (fixed table name)
+db.run(`CREATE TABLE IF NOT EXISTS squad_members (
     squad_id INTEGER,
     user_id INTEGER,
     joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(squad_id, user_id),
+    PRIMARY KEY (squad_id, user_id),
     FOREIGN KEY(squad_id) REFERENCES game_squads(id),
     FOREIGN KEY(user_id) REFERENCES users(id)
 )`, (err) => {
-    if (err) console.error("Error creating game squad members table:", err);
+    if (err) console.error("Error creating squad members table:", err);
 });
 
 // Create tournaments table
