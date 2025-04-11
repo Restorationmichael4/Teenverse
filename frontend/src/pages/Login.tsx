@@ -13,16 +13,16 @@ export default function Login() {
     const handleLogin = async () => {
         try {
             const res = await axios.post("https://teenverse.onrender.com/api/login", { email, password });
-            console.log("Login Response:", res.data); // Debug: Log the response
+            console.log("Login Response:", res.data);
             setMessage(res.data.message);
             if (res.status === 200) {
                 const user = { email, username: res.data.username };
-                console.log("Logging in with user:", user, "token:", res.data.token); // Debug: Log user and token
+                console.log("Logging in with user:", user, "token:", res.data.token);
                 login(user, res.data.token);
-                setTimeout(() => navigate("/dashboard"), 2000);
+                navigate("/dashboard"); // Navigate immediately
             }
         } catch (err) {
-            console.error("Login Error:", err); // Debug: Log any errors
+            console.error("Login Error:", err);
             setMessage(err.response?.data?.message || "Error logging in");
         }
     };
