@@ -154,6 +154,27 @@ app.post("/api/login", async (req, res) => {
     }
 });
 
+// Get user data (for verifying token)
+app.get("/api/users/me", authenticateToken, async (req: any, res) => {
+    try {
+        const user = await new Promise<any>((resolve, reject) => {
+            db.get("SELECT id, email, username FROM users WHERE email = ?", [req.user.email], (err, row) => {
+                if (err) reject(err);
+                resolve(row);
+            });
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json(user);
+    } catch (err) {
+        console.error("Get user data error:", err);
+        res.status(500).json({ message: "Internal server error" });
+    }
+});
+
 // Create post endpoint (used for rants as well)
 app.post("/api/create-post", authenticateToken, async (req, res) => {
     try {
@@ -486,10 +507,22 @@ app.post("/api/game-squads", authenticateToken, async (req, res) => {
 
         if (!user) return res.status(404).json({ message: "User not found" });
 
+        const squad = await new Promise<any>((resolve, reject) => {
+            db.run(
+                "INSERT INTO game_squads (user_id, username, game_name, uid, description, status, max_members, wins, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                [user.id, user.username, gameName, uid, description, "open", 5, 0, new Date()],
+                function (err) {
+                    if (err) reject(err);
+                    resolve({ id: this.lastID });
+                }
+            );
+        });
+
+        // Add the creator as a member
         await new Promise<void>((resolve, reject) => {
             db.run(
-                "INSERT INTO game_squads (user_id, username, game_name, uid, description) VALUES (?, ?, ?, ?, ?)",
-                [user.id, user.username, gameName, uid, description],
+                "INSERT INTO squad_members (squad_id, user_id, joined_at) VALUES (?, ?, ?)",
+                [squad.id, user.id, new Date()],
                 (err) => {
                     if (err) reject(err);
                     resolve();
@@ -497,7 +530,7 @@ app.post("/api/game-squads", authenticateToken, async (req, res) => {
             );
         });
 
-        res.json({ message: "Game squad created!" });
+        res.json({ message: "Game squad created!", squadId: squad.id });
     } catch (err) {
         console.error("Create game squad error:", err);
         res.status(500).json({ message: "Internal server error" });
@@ -532,7 +565,7 @@ app.post("/api/game-squads/join", authenticateToken, async (req, res) => {
         if (squad.status === "closed") return res.status(400).json({ message: "Squad is closed to new members" });
 
         const memberCount: any = await new Promise<any>((resolve, reject) => {
-            db.get("SELECT COUNT(*) as count FROM game_squad_members WHERE squad_id = ?", [squadId], (err, row) => {
+            db.get("SELECT COUNT(*) as count FROM squad_members WHERE squad_id = ?", [squadId], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
             });
@@ -543,7 +576,7 @@ app.post("/api/game-squads/join", authenticateToken, async (req, res) => {
         }
 
         const alreadyMember: any = await new Promise<any>((resolve, reject) => {
-            db.get("SELECT id FROM game_squad_members WHERE squad_id = ? AND user_id = ?", [squadId, user.id], (err, row) => {
+            db.get("SELECT id FROM squad_members WHERE squad_id = ? AND user_id = ?", [squadId, user.id], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
             });
@@ -552,7 +585,7 @@ app.post("/api/game-squads/join", authenticateToken, async (req, res) => {
         if (alreadyMember) return res.status(400).json({ message: "You are already a member of this squad" });
 
         await new Promise<void>((resolve, reject) => {
-            db.run("INSERT INTO game_squad_members (squad_id, user_id) VALUES (?, ?)", [squadId, user.id], (err) => {
+            db.run("INSERT INTO squad_members (squad_id, user_id) VALUES (?, ?)", [squadId, user.id], (err) => {
                 if (err) reject(err);
                 resolve();
             });
@@ -828,7 +861,7 @@ app.get("/api/tournaments", authenticateToken, async (req, res) => {
     } catch (err) {
         res.status(500).json({ message: "Internal server error" });
     }
-});                 
+});
 
 // Upload a game clip
 app.post("/api/game-clips", authenticateToken, async (req, res) => {
@@ -848,7 +881,7 @@ app.post("/api/game-clips", authenticateToken, async (req, res) => {
         if (!user) return res.status(404).json({ message: "User not found" });
 
         const isMember: any = await new Promise<any>((resolve, reject) => {
-            db.get("SELECT id FROM game_squad_members WHERE squad_id = ? AND user_id = ?", [squadId, user.id], (err, row) => {
+            db.get("SELECT id FROM squad_members WHERE squad_id = ? AND user_id = ?", [squadId, user.id], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
             });
@@ -919,7 +952,7 @@ app.post("/api/squad-messages", authenticateToken, async (req, res) => {
         if (!user) return res.status(404).json({ message: "User not found" });
 
         const isMember: any = await new Promise<any>((resolve, reject) => {
-            db.get("SELECT id FROM game_squad_members WHERE squad_id = ? AND user_id = ?", [squadId, user.id], (err, row) => {
+            db.get("SELECT id FROM squad_members WHERE squad_id = ? AND user_id = ?", [squadId, user.id], (err, row) => {
                 if (err) reject(err);
                 resolve(row);
             });
@@ -951,38 +984,30 @@ app.post("/api/squad-messages", authenticateToken, async (req, res) => {
     }
 });
 
-// Get messages for a squad chat
-app.get("/api/squad-messages/:squadId", authenticateToken, async (req, res) => {
+// Get messages for a squad chat (with membership check)
+app.get("/api/squad-messages/:squadId", authenticateToken, async (req: any, res) => {
     try {
-        const squadId = req.params.squadId;
-        const email = req.user.email;
+        const { squadId } = req.params;
+        const userId = req.user.id;
 
-        const user: any = await new Promise<any>((resolve, reject) => {
-            db.get("SELECT id FROM users WHERE email = ?", [email], (err, row) => {
-                if (err) reject(err);
-                resolve(row);
-            });
+        // Check if the user is a member of the squad
+        const membership = await new Promise<any>((resolve, reject) => {
+            db.get(
+                "SELECT * FROM squad_members WHERE squad_id = ? AND user_id = ?",
+                [squadId, userId],
+                (err, row) => {
+                    if (err) reject(err);
+                    resolve(row);
+                }
+            );
         });
 
-        if (!user) return res.status(404).json({ message: "User not found" });
+        if (!membership) {
+            return res.status(403).json({ message: "You are not a member of this squad" });
+        }
 
-        const isMember: any = await new Promise<any>((resolve, reject) => {
-            db.get("SELECT id FROM game_squad_members WHERE squad_id = ? AND user_id = ?", [squadId, user.id], (err, row) => {
-                if (err) reject(err);
-                resolve(row);
-            });
-        });
-
-        const isCreator: any = await new Promise<any>((resolve, reject) => {
-            db.get("SELECT id FROM game_squads WHERE id = ? AND user_id = ?", [squadId, user.id], (err, row) => {
-                if (err) reject(err);
-                resolve(row);
-            });
-        });
-
-        if (!isMember && !isCreator) return res.status(403).json({ message: "You must be a member of this squad to view messages" });
-
-        const messages: any[] = await new Promise<any[]>((resolve, reject) => {
+        // Fetch messages for the squad
+        const messages = await new Promise<any[]>((resolve, reject) => {
             db.all(
                 "SELECT sm.*, u.username FROM squad_messages sm JOIN users u ON sm.user_id = u.id WHERE sm.squad_id = ? ORDER BY sm.created_at ASC",
                 [squadId],
@@ -993,9 +1018,10 @@ app.get("/api/squad-messages/:squadId", authenticateToken, async (req, res) => {
             );
         });
 
-        res.json(messages);
+        res.status(200).json(messages);
     } catch (err) {
-        res.status(500).json({ message: "Internal server error" });
+        console.error("Error fetching squad messages:", err);
+        res.status(500).json({ message: "Error fetching squad messages" });
     }
 });
 
@@ -1391,7 +1417,7 @@ app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 declare global {
     namespace Express {
         interface Request {
-            user?: { email: string, verified: number };
+            user?: { email: string, verified: number, id?: number };
         }
     }
-                   }
+            }
